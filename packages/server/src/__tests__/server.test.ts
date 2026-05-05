@@ -135,6 +135,24 @@ describe('SiteAssistantServer', () => {
     ws.close()
   })
 
+  it('enforces rate limit', async () => {
+    const limitedServer = new SiteAssistantServer({ port: 9876, maxCommandsPerSecond: 2 })
+    await new Promise((r) => setTimeout(r, 100))
+
+    const ws = await connectClient(9876, 'c1', { userId: '123' })
+
+    // First 2 should work
+    limitedServer.sendCommand('c1', { action: 'click', target: 'x' })
+    limitedServer.sendCommand('c1', { action: 'click', target: 'x' })
+
+    // Third should throw
+    expect(() => limitedServer.sendCommand('c1', { action: 'click', target: 'x' })).toThrow('Rate limit')
+
+    ws.close()
+    limitedServer.close()
+    await new Promise((r) => setTimeout(r, 100))
+  })
+
   it('removes client on disconnect', async () => {
     const onDisconnect = vi.fn()
     server.on('disconnect', onDisconnect)

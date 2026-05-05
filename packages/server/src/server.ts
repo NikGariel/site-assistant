@@ -9,6 +9,7 @@ import { ToolExecutor } from './tools.js'
 export interface SiteAssistantServerOptions {
   port?: number
   server?: HttpServer
+  maxCommandsPerSecond?: number
 }
 
 export class SiteAssistantServer extends EventEmitter {
@@ -17,16 +18,24 @@ export class SiteAssistantServer extends EventEmitter {
   private pendingSockets = new Map<WebSocket, NodeJS.Timeout>()
   private aliveMap = new Map<WebSocket, boolean>()
   private pingTimer: NodeJS.Timeout | null = null
+  private commandCounts = new Map<string, number>()
+  private rateLimitTimer: NodeJS.Timeout | null = null
+  private maxCommandsPerSecond: number
 
   constructor(options: SiteAssistantServerOptions) {
     super()
     this.connections = new ConnectionManager()
+    this.maxCommandsPerSecond = options.maxCommandsPerSecond ?? 10
 
     if (options.server) {
       this.wss = new WebSocketServer({ server: options.server })
     } else {
       this.wss = new WebSocketServer({ port: options.port ?? 3100 })
     }
+
+    this.rateLimitTimer = setInterval(() => {
+      this.commandCounts.clear()
+    }, 1000)
 
     this.pingTimer = setInterval(() => {
       this.wss.clients.forEach((ws) => {
@@ -113,7 +122,16 @@ export class SiteAssistantServer extends EventEmitter {
     return this.connections.listAll().find((c) => c.ws === ws)
   }
 
+  private checkRateLimit(clientId: string): void {
+    const count = this.commandCounts.get(clientId) ?? 0
+    if (count >= this.maxCommandsPerSecond) {
+      throw new Error(`Rate limit exceeded for client "${clientId}" (max ${this.maxCommandsPerSecond}/s)`)
+    }
+    this.commandCounts.set(clientId, count + 1)
+  }
+
   sendCommand(clientId: string, action: Action): string {
+    this.checkRateLimit(clientId)
     const client = this.connections.get(clientId)
     if (!client) throw new Error(`Client "${clientId}" not connected`)
     const actionId = randomUUID()
@@ -123,6 +141,7 @@ export class SiteAssistantServer extends EventEmitter {
   }
 
   sendMessage(clientId: string, text: string): void {
+    this.checkRateLimit(clientId)
     const client = this.connections.get(clientId)
     if (!client) throw new Error(`Client "${clientId}" not connected`)
     const msg: ServerMessage = { type: 'message', text }
@@ -130,6 +149,7 @@ export class SiteAssistantServer extends EventEmitter {
   }
 
   sendScenario(clientId: string, steps: Action[]): void {
+    this.checkRateLimit(clientId)
     const client = this.connections.get(clientId)
     if (!client) throw new Error(`Client "${clientId}" not connected`)
     const msg: ServerMessage = { type: 'scenario', steps }
@@ -155,6 +175,7 @@ export class SiteAssistantServer extends EventEmitter {
   }
 
   close(): void {
+    if (this.rateLimitTimer) clearInterval(this.rateLimitTimer)
     if (this.pingTimer) clearInterval(this.pingTimer)
     this.wss.close()
   }
