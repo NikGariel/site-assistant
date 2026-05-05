@@ -4,6 +4,7 @@ import { ConnectionManager, ClientEntry } from './connection-manager.js'
 import type { Action, ClientMessage, ServerMessage } from 'site-assistant-shared'
 import { randomUUID } from 'crypto'
 import type { Server as HttpServer } from 'http'
+import { ToolExecutor } from './tools.js'
 
 export interface SiteAssistantServerOptions {
   port?: number
@@ -114,6 +115,16 @@ export class SiteAssistantServer extends EventEmitter {
 
   listClients(): Array<{ id: string; meta: Record<string, any> }> {
     return this.connections.listAll().map((c) => ({ id: c.id, meta: c.meta }))
+  }
+
+  getToolDefinitions(format: 'anthropic' | 'openai' | 'raw'): any[] {
+    const executor = new ToolExecutor(this)
+    return executor.getDefinitions(format)
+  }
+
+  async executeTool(toolName: string, args: Record<string, any>): Promise<any> {
+    const executor = new ToolExecutor(this)
+    return executor.execute(toolName, args)
   }
 
   close(): void {

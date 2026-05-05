@@ -17,8 +17,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "site-assistant-shared": "workspace:*",
     "ws": "^8.17.0",
-    "site-assistant-shared": "workspace:*"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/ws": "^8.5.0"
