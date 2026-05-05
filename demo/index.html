@@ -3,377 +3,615 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Site Assistant Demo</title>
+  <title>Acme Platform — Build Something Amazing</title>
   <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #818cf8;
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --bg-dark: #0f172a;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; line-height: 1.6; color: #333; }
-    header { background: #1a1a2e; color: #fff; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
-    header h1 { font-size: 1.5rem; }
-    nav a { color: #a8b2d1; margin-left: 20px; text-decoration: none; }
-    .hero { padding: 80px 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
-    .hero h2 { font-size: 2.5rem; margin-bottom: 20px; }
-    .hero p { font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px; }
-    .btn { display: inline-block; padding: 12px 32px; border-radius: 6px; font-size: 1rem; cursor: pointer; border: none; }
-    .btn-primary { background: #4f96ff; color: #fff; }
-    .features { padding: 60px 40px; max-width: 900px; margin: 0 auto; }
-    .features h3 { font-size: 1.8rem; margin-bottom: 30px; text-align: center; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; color: var(--text); line-height: 1.6; }
+    a { color: var(--primary); text-decoration: none; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: #4338ca; transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: var(--primary); border: 2px solid var(--primary); }
+    .btn-outline:hover { background: var(--primary); color: #fff; }
+    .btn-sm { padding: 8px 16px; font-size: 0.875rem; }
+
+    /* NAV */
+    nav { background: var(--bg); border-bottom: 1px solid var(--border); padding: 16px 0; position: sticky; top: 0; z-index: 100; }
+    nav .container { display: flex; justify-content: space-between; align-items: center; }
+    nav .logo { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+    nav .links { display: flex; gap: 24px; align-items: center; }
+    nav .links a { color: var(--text-light); font-size: 0.95rem; }
+    nav .links a:hover { color: var(--primary); }
+
+    /* HERO */
+    .hero { padding: 80px 0 60px; text-align: center; background: linear-gradient(135deg, #eef2ff 0%, #faf5ff 50%, #fff7ed 100%); }
+    .hero h1 { font-size: 3.2rem; font-weight: 800; line-height: 1.1; margin-bottom: 20px; background: linear-gradient(135deg, var(--primary), #7c3aed, #db2777); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p { font-size: 1.2rem; color: var(--text-light); max-width: 600px; margin: 0 auto 32px; }
+    .hero .btn-group { display: flex; gap: 12px; justify-content: center; }
+    .hero .badge { display: inline-block; background: #dcfce7; color: #166534; font-size: 0.85rem; padding: 4px 14px; border-radius: 20px; margin-bottom: 20px; font-weight: 500; }
+
+    /* STATS */
+    .stats { padding: 40px 0; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .stats .container { display: flex; justify-content: center; gap: 60px; }
+    .stat { text-align: center; }
+    .stat .num { font-size: 2.2rem; font-weight: 800; color: var(--primary); }
+    .stat .label { font-size: 0.9rem; color: var(--text-light); }
+
+    /* FEATURES */
+    .features { padding: 80px 0; }
+    .section-title { text-align: center; margin-bottom: 48px; }
+    .section-title h2 { font-size: 2rem; font-weight: 700; margin-bottom: 12px; }
+    .section-title p { color: var(--text-light); font-size: 1.1rem; }
     .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-    .feature-card { background: #f7f8fc; padding: 24px; border-radius: 8px; text-align: center; }
-    .pricing { padding: 60px 40px; background: #f0f2f5; text-align: center; }
-    .pricing h3 { font-size: 1.8rem; margin-bottom: 30px; }
-    .form-section { padding: 60px 40px; max-width: 500px; margin: 0 auto; }
-    .form-section input { display: block; width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+    .feature-card { background: var(--bg-alt); padding: 32px 24px; border-radius: 12px; border: 1px solid var(--border); transition: all 0.2s; }
+    .feature-card:hover { border-color: var(--primary-light); box-shadow: 0 4px 20px rgba(79, 70, 229, 0.1); }
+    .feature-card .icon { font-size: 2rem; margin-bottom: 12px; }
+    .feature-card h4 { font-size: 1.1rem; margin-bottom: 8px; }
+    .feature-card p { color: var(--text-light); font-size: 0.95rem; }
 
-    /* Control Panel */
-    .control-panel {
-      position: fixed;
-      top: 0;
-      right: 0;
-      width: 360px;
-      height: 100vh;
-      background: #1a1a2e;
-      color: #e0e0e0;
-      overflow-y: auto;
-      z-index: 200000;
-      box-shadow: -4px 0 20px rgba(0,0,0,0.3);
-      display: flex;
-      flex-direction: column;
-    }
-    .control-panel h2 {
-      padding: 16px 20px;
-      font-size: 1rem;
-      border-bottom: 1px solid #2a2a4e;
-      color: #4f96ff;
-    }
-    .control-section {
-      padding: 12px 20px;
-      border-bottom: 1px solid #2a2a4e;
-    }
-    .control-section h3 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #888;
-      margin-bottom: 8px;
-    }
-    .control-section .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .ctrl-btn {
-      padding: 6px 12px;
-      border: 1px solid #4f96ff;
-      background: transparent;
-      color: #4f96ff;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .ctrl-btn:hover {
-      background: #4f96ff;
-      color: #fff;
-    }
-    .ctrl-btn.green { border-color: #4caf50; color: #4caf50; }
-    .ctrl-btn.green:hover { background: #4caf50; color: #fff; }
-    .ctrl-btn.orange { border-color: #ff9800; color: #ff9800; }
-    .ctrl-btn.orange:hover { background: #ff9800; color: #fff; }
-    .ctrl-btn.purple { border-color: #9c27b0; color: #9c27b0; }
-    .ctrl-btn.purple:hover { background: #9c27b0; color: #fff; }
+    /* PRICING */
+    .pricing { padding: 80px 0; background: var(--bg-alt); }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto; }
+    .price-card { background: var(--bg); padding: 32px; border-radius: 12px; border: 2px solid var(--border); text-align: center; position: relative; }
+    .price-card.popular { border-color: var(--primary); }
+    .price-card.popular::before { content: 'Most Popular'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; font-size: 0.8rem; padding: 4px 16px; border-radius: 12px; }
+    .price-card h4 { font-size: 1.2rem; margin-bottom: 8px; }
+    .price-card .price { font-size: 2.5rem; font-weight: 800; margin: 16px 0; }
+    .price-card .price span { font-size: 1rem; color: var(--text-light); font-weight: 400; }
+    .price-card ul { list-style: none; text-align: left; margin: 20px 0; }
+    .price-card li { padding: 6px 0; font-size: 0.95rem; color: var(--text-light); }
+    .price-card li::before { content: "✓ "; color: var(--success); font-weight: 700; }
 
-    .target-select {
-      width: 100%;
-      padding: 6px 10px;
-      background: #2a2a4e;
-      border: 1px solid #3a3a5e;
-      color: #e0e0e0;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      margin-bottom: 8px;
-    }
-    .text-input {
-      width: 100%;
-      padding: 6px 10px;
-      background: #2a2a4e;
-      border: 1px solid #3a3a5e;
-      color: #e0e0e0;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      margin-bottom: 8px;
-    }
+    /* TESTIMONIALS */
+    .testimonials { padding: 80px 0; }
+    .testimonial-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+    .testimonial { background: var(--bg-alt); padding: 28px; border-radius: 12px; border: 1px solid var(--border); }
+    .testimonial p { font-style: italic; color: var(--text); margin-bottom: 16px; font-size: 1rem; }
+    .testimonial .author { display: flex; align-items: center; gap: 12px; }
+    .testimonial .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 1.1rem; }
+    .testimonial .name { font-weight: 600; font-size: 0.95rem; }
+    .testimonial .role { color: var(--text-light); font-size: 0.85rem; }
 
-    /* Event Log */
-    .event-log {
-      flex: 1;
-      padding: 12px 20px;
-      overflow-y: auto;
-      font-family: 'SF Mono', Monaco, monospace;
-      font-size: 0.75rem;
-      min-height: 200px;
-    }
-    .event-log h3 {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #888;
-      margin-bottom: 8px;
-    }
-    .log-entry {
-      padding: 3px 0;
-      border-bottom: 1px solid #2a2a4e;
-      word-break: break-all;
-    }
-    .log-entry.sent { color: #4f96ff; }
-    .log-entry.received { color: #4caf50; }
-    .log-entry.error { color: #f44336; }
-    .log-entry .time { color: #666; margin-right: 6px; }
+    /* FAQ */
+    .faq { padding: 80px 0; background: var(--bg-alt); }
+    .faq-list { max-width: 700px; margin: 0 auto; }
+    .faq-item { border-bottom: 1px solid var(--border); }
+    .faq-question { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; cursor: pointer; font-weight: 600; font-size: 1.05rem; }
+    .faq-question::after { content: '+'; font-size: 1.5rem; color: var(--text-light); transition: transform 0.2s; }
+    .faq-item.open .faq-question::after { content: '−'; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s; color: var(--text-light); font-size: 0.95rem; }
+    .faq-item.open .faq-answer { max-height: 200px; padding-bottom: 20px; }
 
-    /* Connection status */
-    .status-bar {
-      padding: 8px 20px;
-      background: #0d0d1a;
-      font-size: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    /* DATA TABLE */
+    .comparison { padding: 80px 0; }
+    .comparison table { width: 100%; border-collapse: collapse; background: var(--bg); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+    .comparison th { background: var(--bg-dark); color: #fff; padding: 14px 16px; text-align: left; font-size: 0.95rem; }
+    .comparison td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.95rem; }
+    .comparison tr:hover td { background: #f1f5f9; }
+
+    /* CONTACT */
+    .contact { padding: 80px 0; background: var(--bg-alt); }
+    .contact-form { max-width: 500px; margin: 0 auto; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 6px; font-size: 0.95rem; }
+    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; font-family: inherit; }
+    .form-group textarea { min-height: 100px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .checkbox-group { display: flex; align-items: center; gap: 8px; }
+    .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; }
+
+    /* FOOTER */
+    footer { background: var(--bg-dark); color: #94a3b8; padding: 40px 0 24px; }
+    footer .container { display: flex; justify-content: space-between; }
+    footer .col h5 { color: #fff; margin-bottom: 12px; font-size: 1rem; }
+    footer .col a { display: block; color: #94a3b8; margin-bottom: 8px; font-size: 0.9rem; }
+    footer .col a:hover { color: #fff; }
+    footer .bottom { text-align: center; margin-top: 32px; padding-top: 20px; border-top: 1px solid #1e293b; font-size: 0.85rem; }
+
+    /* NOTIFICATION BANNER */
+    .banner { background: linear-gradient(90deg, var(--primary), #7c3aed); color: #fff; padding: 10px; text-align: center; font-size: 0.9rem; }
+    .banner a { color: #fff; text-decoration: underline; margin-left: 8px; }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: #fff; border-radius: 12px; padding: 32px; max-width: 450px; width: 90%; }
+    .modal h3 { font-size: 1.3rem; margin-bottom: 16px; }
+    .modal .form-group { margin-bottom: 12px; }
+    .modal .btn-group { display: flex; gap: 8px; margin-top: 20px; }
+
+    /* TOGGLE */
+    .toggle-row { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+    .toggle { width: 44px; height: 24px; background: #cbd5e1; border-radius: 12px; position: relative; cursor: pointer; transition: background 0.2s; }
+    .toggle.active { background: var(--primary); }
+    .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: left 0.2s; }
+    .toggle.active::after { left: 22px; }
+
+    /* CHAT WIDGET */
+    .chat-widget { position: fixed; bottom: 24px; right: 24px; z-index: 99990; }
+    .chat-toggle { width: 56px; height: 56px; border-radius: 50%; background: var(--primary); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(79,70,229,0.4); transition: transform 0.2s; }
+    .chat-toggle:hover { transform: scale(1.05); }
+    .chat-toggle svg { width: 28px; height: 28px; fill: #fff; }
+    .chat-panel { display: none; position: absolute; bottom: 68px; right: 0; width: 380px; height: 500px; background: #fff; border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.15); overflow: hidden; flex-direction: column; }
+    .chat-panel.open { display: flex; }
+    .chat-header { background: var(--primary); color: #fff; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .chat-header h4 { font-size: 1rem; font-weight: 600; }
+    .chat-header button { background: none; border: none; color: #fff; cursor: pointer; font-size: 1.2rem; }
+    .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .chat-msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; }
+    .chat-msg.bot { background: #f1f5f9; color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-msg.user { background: var(--primary); color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chat-msg.typing { background: #f1f5f9; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .chat-msg.typing::after { content: '...'; animation: dots 1.2s infinite; }
+    @keyframes dots { 0%,20% { content: '.'; } 40% { content: '..'; } 60%,100% { content: '...'; } }
+    .chat-input { display: flex; padding: 12px; border-top: 1px solid var(--border); gap: 8px; }
+    .chat-input input { flex: 1; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; outline: none; }
+    .chat-input input:focus { border-color: var(--primary); }
+    .chat-input button { padding: 10px 16px; background: var(--primary); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+    .chat-input button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    @media (max-width: 768px) {
+      .feature-grid, .pricing-grid, .testimonial-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 2.2rem; }
+      .stats .container { flex-wrap: wrap; gap: 24px; }
+      .form-row { grid-template-columns: 1fr; }
+      .chat-panel { width: 320px; height: 450px; }
+      footer .container { flex-direction: column; gap: 24px; }
     }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #f44336;
-    }
-    .status-dot.connected { background: #4caf50; }
   </style>
 </head>
 <body>
-  <header data-ai="header">
-    <h1>Acme Corp</h1>
-    <nav>
-      <a href="#features">Features</a>
-      <a href="#pricing">Pricing</a>
-      <button class="btn btn-primary" data-ai="signup_button">Sign Up</button>
-    </nav>
-  </header>
 
-  <section class="hero" data-ai="hero">
-    <h2>Build something amazing</h2>
-    <p>The best platform for your next project. Fast, reliable, and beautiful.</p>
-    <button class="btn btn-primary" data-ai="cta_button">Get Started</button>
+  <!-- NOTIFICATION BANNER -->
+  <div class="banner" data-ai="banner" data-ai-label="Top notification banner">
+    New: AI-powered assistant now available!
+    <a href="#" data-ai="banner_link" data-ai-label="Banner CTA link">Try it now</a>
+  </div>
+
+  <!-- NAV -->
+  <nav data-ai="nav" data-ai-label="Main navigation">
+    <div class="container">
+      <div class="logo" data-ai="logo">Acme Platform</div>
+      <div class="links">
+        <a href="#features" data-ai="nav_features" data-ai-label="Features nav link">Features</a>
+        <a href="#pricing" data-ai="nav_pricing" data-ai-label="Pricing nav link">Pricing</a>
+        <a href="#faq" data-ai="nav_faq" data-ai-label="FAQ nav link">FAQ</a>
+        <a href="#contact" data-ai="nav_contact" data-ai-label="Contact nav link">Contact</a>
+        <button class="btn btn-sm btn-outline" data-ai="nav_login" data-ai-label="Login button in navbar" onclick="openModal()">Log In</button>
+        <button class="btn btn-sm btn-primary" data-ai="nav_signup" data-ai-label="Sign up button in navbar">Sign Up Free</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" data-ai="hero" data-ai-label="Hero section with main value proposition">
+    <div class="container">
+      <div class="badge" data-ai="hero_badge" data-ai-label="Launch announcement badge">Launched in 2026</div>
+      <h1>Build, Deploy, Scale<br>Without Limits</h1>
+      <p>The all-in-one platform for modern teams. Ship faster with AI-powered tools, real-time collaboration, and enterprise-grade infrastructure.</p>
+      <div class="btn-group">
+        <button class="btn btn-primary" data-ai="hero_cta" data-ai-label="Main call-to-action button">Start Free Trial</button>
+        <button class="btn btn-outline" data-ai="hero_demo" data-ai-label="Watch demo button">Watch Demo</button>
+      </div>
+    </div>
   </section>
 
-  <section class="features" id="features" data-ai="features">
-    <h3>Features</h3>
-    <div class="feature-grid">
-      <div class="feature-card" data-ai="feature_speed">
-        <h4>Fast</h4>
-        <p>Lightning fast performance</p>
+  <!-- STATS -->
+  <section class="stats" data-ai="stats" data-ai-label="Key metrics section">
+    <div class="container">
+      <div class="stat" data-ai="stat_users"><div class="num">50K+</div><div class="label">Active Users</div></div>
+      <div class="stat" data-ai="stat_uptime"><div class="num">99.9%</div><div class="label">Uptime</div></div>
+      <div class="stat" data-ai="stat_deploy"><div class="num">2M+</div><div class="label">Deploys</div></div>
+      <div class="stat" data-ai="stat_countries"><div class="num">120+</div><div class="label">Countries</div></div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features" data-ai="features" data-ai-label="Features section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Everything You Need</h2>
+        <p>Powerful features to help you build and scale</p>
       </div>
-      <div class="feature-card" data-ai="feature_security">
-        <h4>Secure</h4>
-        <p>Enterprise-grade security</p>
-      </div>
-      <div class="feature-card" data-ai="feature_scale">
-        <h4>Scalable</h4>
-        <p>Grows with your business</p>
+      <div class="feature-grid">
+        <div class="feature-card" data-ai="feature_ai" data-ai-label="AI Tools feature card">
+          <div class="icon">🤖</div>
+          <h4>AI-Powered Tools</h4>
+          <p>Generate code, write docs, and automate workflows with built-in AI assistance.</p>
+        </div>
+        <div class="feature-card" data-ai="feature_collab" data-ai-label="Real-time collaboration feature card">
+          <div class="icon">👥</div>
+          <h4>Real-time Collaboration</h4>
+          <p>Work together with your team in real-time. See changes instantly.</p>
+        </div>
+        <div class="feature-card" data-ai="feature_deploy" data-ai-label="One-click deploy feature card">
+          <div class="icon">🚀</div>
+          <h4>One-Click Deploy</h4>
+          <p>Push to production in seconds. Zero-downtime deployments included.</p>
+        </div>
+        <div class="feature-card" data-ai="feature_analytics" data-ai-label="Analytics feature card">
+          <div class="icon">📊</div>
+          <h4>Advanced Analytics</h4>
+          <p>Understand your users with detailed analytics and real-time dashboards.</p>
+        </div>
+        <div class="feature-card" data-ai="feature_security" data-ai-label="Enterprise security feature card">
+          <div class="icon">🔒</div>
+          <h4>Enterprise Security</h4>
+          <p>SOC 2 compliant with end-to-end encryption and SSO support.</p>
+        </div>
+        <div class="feature-card" data-ai="feature_api" data-ai-label="API-first feature card">
+          <div class="icon">⚡</div>
+          <h4>API-First Design</h4>
+          <p>REST and GraphQL APIs. SDKs for every language. Webhooks included.</p>
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="pricing" id="pricing" data-ai="pricing">
-    <h3>Pricing</h3>
-    <p>Simple, transparent pricing for everyone.</p>
+  <!-- PRICING -->
+  <section class="pricing" id="pricing" data-ai="pricing" data-ai-label="Pricing section with 3 tiers">
+    <div class="container">
+      <div class="section-title">
+        <h2>Simple, Transparent Pricing</h2>
+        <p>No hidden fees. Cancel anytime.</p>
+        <div class="toggle-row" style="justify-content: center; margin-top: 16px;">
+          <span>Monthly</span>
+          <div class="toggle" data-ai="pricing_toggle" data-ai-label="Monthly/Annual billing toggle" onclick="this.classList.toggle('active')"></div>
+          <span>Annual <span style="color: var(--success); font-weight: 600;">(Save 20%)</span></span>
+        </div>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card" data-ai="plan_starter" data-ai-label="Starter plan card">
+          <h4>Starter</h4>
+          <div class="price">$9<span>/mo</span></div>
+          <ul>
+            <li>5 projects</li>
+            <li>10GB storage</li>
+            <li>Basic analytics</li>
+            <li>Email support</li>
+          </ul>
+          <button class="btn btn-outline" data-ai="plan_starter_btn" data-ai-label="Choose Starter plan button" style="width:100%">Get Started</button>
+        </div>
+        <div class="price-card popular" data-ai="plan_pro" data-ai-label="Pro plan card (most popular)">
+          <h4>Pro</h4>
+          <div class="price">$29<span>/mo</span></div>
+          <ul>
+            <li>Unlimited projects</li>
+            <li>100GB storage</li>
+            <li>Advanced analytics</li>
+            <li>Priority support</li>
+            <li>Custom domains</li>
+          </ul>
+          <button class="btn btn-primary" data-ai="plan_pro_btn" data-ai-label="Choose Pro plan button" style="width:100%">Start Free Trial</button>
+        </div>
+        <div class="price-card" data-ai="plan_enterprise" data-ai-label="Enterprise plan card">
+          <h4>Enterprise</h4>
+          <div class="price">$99<span>/mo</span></div>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>Unlimited storage</li>
+            <li>SSO &amp; SAML</li>
+            <li>Dedicated support</li>
+            <li>SLA guarantee</li>
+          </ul>
+          <button class="btn btn-outline" data-ai="plan_enterprise_btn" data-ai-label="Contact sales for Enterprise button" style="width:100%">Contact Sales</button>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="form-section" data-ai="signup_form">
-    <h3>Create Account</h3>
-    <input type="text" placeholder="Name" data-ai="input_name" />
-    <input type="email" placeholder="Email" data-ai="input_email" />
-    <button class="btn btn-primary" data-ai="submit_button">Create Account</button>
+  <!-- COMPARISON TABLE -->
+  <section class="comparison" data-ai="comparison" data-ai-label="Feature comparison table">
+    <div class="container">
+      <div class="section-title">
+        <h2>Compare Plans</h2>
+      </div>
+      <table data-ai="comparison_table" data-ai-label="Plan comparison table">
+        <thead>
+          <tr><th>Feature</th><th>Starter</th><th>Pro</th><th>Enterprise</th></tr>
+        </thead>
+        <tbody>
+          <tr data-ai="row_projects"><td>Projects</td><td>5</td><td>Unlimited</td><td>Unlimited</td></tr>
+          <tr data-ai="row_storage"><td>Storage</td><td>10GB</td><td>100GB</td><td>Unlimited</td></tr>
+          <tr data-ai="row_members"><td>Team Members</td><td>3</td><td>20</td><td>Unlimited</td></tr>
+          <tr data-ai="row_api"><td>API Access</td><td>Basic</td><td>Full</td><td>Full + Priority</td></tr>
+          <tr data-ai="row_support"><td>Support</td><td>Email</td><td>Priority</td><td>Dedicated</td></tr>
+          <tr data-ai="row_sso"><td>SSO</td><td>—</td><td>—</td><td>✓</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
-  <!-- Control Panel -->
-  <div class="control-panel">
-    <h2>Site Assistant — Control Panel</h2>
-
-    <div class="status-bar">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Disconnected</span>
-      <span style="margin-left:auto; color:#666" id="client-id"></span>
-    </div>
-
-    <div class="control-section">
-      <h3>Target Element</h3>
-      <select class="target-select" id="target-select">
-        <option value="header">header</option>
-        <option value="signup_button">signup_button</option>
-        <option value="hero">hero</option>
-        <option value="cta_button">cta_button</option>
-        <option value="features">features</option>
-        <option value="feature_speed">feature_speed</option>
-        <option value="feature_security">feature_security</option>
-        <option value="feature_scale">feature_scale</option>
-        <option value="pricing">pricing</option>
-        <option value="signup_form">signup_form</option>
-        <option value="input_name">input_name</option>
-        <option value="input_email">input_email</option>
-        <option value="submit_button">submit_button</option>
-      </select>
-    </div>
-
-    <div class="control-section">
-      <h3>Single Actions</h3>
-      <div class="btn-row">
-        <button class="ctrl-btn" onclick="sendAction('highlight')">Highlight</button>
-        <button class="ctrl-btn" onclick="sendAction('scroll')">Scroll</button>
-        <button class="ctrl-btn" onclick="sendAction('click')">Click</button>
-        <button class="ctrl-btn" onclick="sendAction('ghost_cursor')">Ghost Cursor</button>
-        <button class="ctrl-btn" onclick="sendAction('show_message')">Show Message</button>
-        <button class="ctrl-btn" onclick="sendAction('fill')">Fill Input</button>
+  <!-- TESTIMONIALS -->
+  <section class="testimonials" data-ai="testimonials" data-ai-label="Customer testimonials section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Loved by Teams</h2>
+        <p>See what our customers are saying</p>
+      </div>
+      <div class="testimonial-grid">
+        <div class="testimonial" data-ai="testimonial_1" data-ai-label="Testimonial from Sarah Chen">
+          <p>"Acme Platform cut our deploy time from hours to minutes. The AI tools are genuinely useful, not just a gimmick."</p>
+          <div class="author"><div class="avatar">S</div><div><div class="name">Sarah Chen</div><div class="role">CTO at TechFlow</div></div></div>
+        </div>
+        <div class="testimonial" data-ai="testimonial_2" data-ai-label="Testimonial from Marcus Johnson">
+          <p>"We migrated our entire stack in a weekend. The API is incredibly well-designed and the docs are top-notch."</p>
+          <div class="author"><div class="avatar">M</div><div><div class="name">Marcus Johnson</div><div class="role">Lead Developer at ScaleUp</div></div></div>
+        </div>
+        <div class="testimonial" data-ai="testimonial_3" data-ai-label="Testimonial from Elena Volkov">
+          <p>"The real-time collaboration changed how our team works. No more merge conflicts, no more waiting."</p>
+          <div class="author"><div class="avatar">E</div><div><div class="name">Elena Volkov</div><div class="role">Engineering Manager at DataPro</div></div></div>
+        </div>
+        <div class="testimonial" data-ai="testimonial_4" data-ai-label="Testimonial from James Park">
+          <p>"Best developer experience I've ever had. The CLI is fast, the dashboard is clean, and support is outstanding."</p>
+          <div class="author"><div class="avatar">J</div><div><div class="name">James Park</div><div class="role">Founder at DevStudio</div></div></div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <div class="control-section">
-      <h3>Action Options</h3>
-      <input class="text-input" id="message-text" placeholder="Message text / fill value" value="Hello from AI!" />
-      <select class="target-select" id="position-select">
-        <option value="top">Position: top</option>
-        <option value="bottom">Position: bottom</option>
-        <option value="left">Position: left</option>
-        <option value="right">Position: right</option>
-      </select>
-    </div>
-
-    <div class="control-section">
-      <h3>Scenarios (via server)</h3>
-      <div class="btn-row">
-        <button class="ctrl-btn green" onclick="runScenario('tour')">Full Tour</button>
-        <button class="ctrl-btn green" onclick="runScenario('signup')">Signup Guide</button>
-        <button class="ctrl-btn green" onclick="runScenario('features')">Show Features</button>
+  <!-- FAQ -->
+  <section class="faq" id="faq" data-ai="faq" data-ai-label="FAQ section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Frequently Asked Questions</h2>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item" data-ai="faq_trial" data-ai-label="FAQ: free trial question">
+          <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">Do you offer a free trial?</div>
+          <div class="faq-answer">Yes! All paid plans come with a 14-day free trial. No credit card required. You can upgrade or cancel at any time.</div>
+        </div>
+        <div class="faq-item" data-ai="faq_cancel" data-ai-label="FAQ: cancellation question">
+          <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">Can I cancel anytime?</div>
+          <div class="faq-answer">Absolutely. You can cancel your subscription at any time from your dashboard. No questions asked, no hidden fees.</div>
+        </div>
+        <div class="faq-item" data-ai="faq_migrate" data-ai-label="FAQ: migration question">
+          <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">Do you help with migration?</div>
+          <div class="faq-answer">Yes, our Enterprise plan includes dedicated migration support. For other plans, we provide detailed guides and our community is very helpful.</div>
+        </div>
+        <div class="faq-item" data-ai="faq_security" data-ai-label="FAQ: security question">
+          <div class="faq-question" onclick="this.parentElement.classList.toggle('open')">How secure is the platform?</div>
+          <div class="faq-answer">We're SOC 2 Type II certified, use end-to-end encryption, and support SSO/SAML. All data is encrypted at rest and in transit.</div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <div class="control-section">
-      <h3>Server API (REST)</h3>
-      <div class="btn-row">
-        <button class="ctrl-btn orange" onclick="sendViaServer('highlight')">Server: Highlight</button>
-        <button class="ctrl-btn orange" onclick="sendViaServer('scroll')">Server: Scroll</button>
-        <button class="ctrl-btn orange" onclick="sendViaServer('ghost_cursor')">Server: Ghost</button>
-        <button class="ctrl-btn purple" onclick="fetchToolDefs()">Get Tool Defs</button>
+  <!-- CONTACT -->
+  <section class="contact" id="contact" data-ai="contact" data-ai-label="Contact form section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Get In Touch</h2>
+        <p>Have a question? We'd love to hear from you.</p>
+      </div>
+      <div class="contact-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>First Name</label>
+            <input type="text" placeholder="John" data-ai="input_firstname" data-ai-label="First name input">
+          </div>
+          <div class="form-group">
+            <label>Last Name</label>
+            <input type="text" placeholder="Doe" data-ai="input_lastname" data-ai-label="Last name input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" placeholder="john@company.com" data-ai="input_email" data-ai-label="Email input">
+        </div>
+        <div class="form-group">
+          <label>Company</label>
+          <input type="text" placeholder="Acme Inc" data-ai="input_company" data-ai-label="Company name input">
+        </div>
+        <div class="form-group">
+          <label>Plan Interest</label>
+          <select data-ai="select_plan" data-ai-label="Plan interest dropdown">
+            <option value="">Select a plan...</option>
+            <option value="starter">Starter</option>
+            <option value="pro">Pro</option>
+            <option value="enterprise">Enterprise</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea placeholder="Tell us about your project..." data-ai="input_message" data-ai-label="Message textarea"></textarea>
+        </div>
+        <div class="form-group">
+          <div class="checkbox-group">
+            <input type="checkbox" id="newsletter" data-ai="checkbox_newsletter" data-ai-label="Newsletter subscription checkbox">
+            <label for="newsletter">Subscribe to our newsletter</label>
+          </div>
+        </div>
+        <button class="btn btn-primary" data-ai="submit_contact" data-ai-label="Submit contact form button" style="width:100%">Send Message</button>
       </div>
     </div>
+  </section>
 
-    <div class="event-log" id="event-log">
-      <h3>Event Log</h3>
+  <!-- FOOTER -->
+  <footer data-ai="footer" data-ai-label="Page footer">
+    <div class="container">
+      <div class="col">
+        <h5>Product</h5>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#">Changelog</a>
+        <a href="#">Roadmap</a>
+      </div>
+      <div class="col">
+        <h5>Resources</h5>
+        <a href="#">Documentation</a>
+        <a href="#">API Reference</a>
+        <a href="#">Blog</a>
+        <a href="#">Community</a>
+      </div>
+      <div class="col">
+        <h5>Company</h5>
+        <a href="#">About</a>
+        <a href="#">Careers</a>
+        <a href="#contact">Contact</a>
+        <a href="#">Privacy Policy</a>
+      </div>
+    </div>
+    <div class="bottom">© 2026 Acme Platform. All rights reserved.</div>
+  </footer>
+
+  <!-- LOGIN MODAL -->
+  <div class="modal-overlay" id="loginModal" data-ai="login_modal" data-ai-label="Login modal dialog">
+    <div class="modal">
+      <h3>Welcome Back</h3>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" placeholder="you@example.com" data-ai="modal_email" data-ai-label="Login email input">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••" data-ai="modal_password" data-ai-label="Login password input">
+      </div>
+      <div class="checkbox-group" style="margin-bottom: 12px;">
+        <input type="checkbox" id="remember" data-ai="modal_remember" data-ai-label="Remember me checkbox">
+        <label for="remember">Remember me</label>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" data-ai="modal_login_btn" data-ai-label="Login submit button" style="flex:1">Log In</button>
+        <button class="btn btn-outline" data-ai="modal_close_btn" data-ai-label="Close modal button" onclick="closeModal()">Cancel</button>
+      </div>
     </div>
   </div>
 
+  <!-- CHAT WIDGET HTML -->
+  <div class="chat-widget">
+    <div class="chat-panel">
+      <div class="chat-header">
+        <h4>AI Assistant</h4>
+        <button>×</button>
+      </div>
+      <div class="chat-messages"></div>
+      <div class="chat-input">
+        <input type="text" placeholder="Ask me anything...">
+        <button>Send</button>
+      </div>
+    </div>
+    <button class="chat-toggle">
+      <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+    </button>
+  </div>
+
+  <!-- SCRIPTS -->
   <script src="/site-assistant.js"></script>
   <script>
-    const logEl = document.getElementById('event-log')
-    const statusDot = document.getElementById('status-dot')
-    const statusText = document.getElementById('status-text')
-    const clientIdEl = document.getElementById('client-id')
-
-    function log(type, msg) {
-      const entry = document.createElement('div')
-      entry.className = `log-entry ${type}`
-      const time = new Date().toLocaleTimeString('en', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      entry.innerHTML = `<span class="time">${time}</span>${msg}`
-      logEl.appendChild(entry)
-      logEl.scrollTop = logEl.scrollHeight
+    // Modal
+    function openModal() {
+      document.getElementById('loginModal').classList.add('active')
     }
+    function closeModal() {
+      document.getElementById('loginModal').classList.remove('active')
+    }
+    document.getElementById('loginModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal()
+    })
 
-    // Init assistant
+    // Site Assistant
     const assistant = new SiteAssistantSDK.SiteAssistant({
-      url: `ws://${location.host}`,
-      meta: { userId: 'demo-user', page: location.pathname }
+      url: (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host,
+      meta: { userId: 'demo-' + Math.random().toString(36).slice(2, 8), page: location.pathname },
+      theme: {
+        primaryColor: '#4f46e5',
+        tooltipBackground: '#0f172a',
+        highlightBorderRadius: 8,
+      }
     })
 
-    assistant.on('message', (text) => {
-      log('received', `MSG: ${text}`)
-    })
-    assistant.on('scenario_start', (steps) => {
-      log('received', `SCENARIO START (${steps.length} steps)`)
-    })
-    assistant.on('scenario_end', () => {
-      log('received', `SCENARIO END`)
-    })
-    assistant.on('disconnect', () => {
-      statusDot.classList.remove('connected')
-      statusText.textContent = 'Disconnected'
-      log('error', 'Disconnected')
-    })
-    assistant.on('reconnect', () => {
-      statusDot.classList.add('connected')
-      statusText.textContent = 'Connected'
-      log('received', 'Reconnected')
-    })
-
+    assistant.on('message', (text) => addChatMessage('bot', text))
+    assistant.on('error', (reason) => console.error('Error:', reason))
+    assistant.on('scenario_start', () => addChatMessage('bot', 'Let me show you...'))
     assistant.connect()
 
-    // Mark connected after a short delay (connect msg sent)
+    // Chat Widget
+    const chatToggle = document.querySelector('.chat-toggle')
+    const chatPanel = document.querySelector('.chat-panel')
+    const chatInput = document.querySelector('.chat-input input')
+    const chatSendBtn = document.querySelector('.chat-input button')
+    const chatMessages = document.querySelector('.chat-messages')
+
+    chatToggle.addEventListener('click', () => {
+      chatPanel.classList.toggle('open')
+      if (chatPanel.classList.contains('open')) chatInput.focus()
+    })
+    document.querySelector('.chat-header button').addEventListener('click', () => {
+      chatPanel.classList.remove('open')
+    })
+
+    function addChatMessage(type, text) {
+      const el = document.createElement('div')
+      el.className = `chat-msg ${type}`
+      el.textContent = text
+      chatMessages.appendChild(el)
+      chatMessages.scrollTop = chatMessages.scrollHeight
+    }
+
+    async function sendChat() {
+      const text = chatInput.value.trim()
+      if (!text) return
+
+      addChatMessage('user', text)
+      chatInput.value = ''
+      chatSendBtn.disabled = true
+
+      // Show typing
+      const typing = document.createElement('div')
+      typing.className = 'chat-msg typing'
+      chatMessages.appendChild(typing)
+      chatMessages.scrollTop = chatMessages.scrollHeight
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text, clientId: assistant.clientId }),
+        })
+        const data = await res.json()
+        typing.remove()
+
+        if (data.error) {
+          addChatMessage('bot', 'Sorry, something went wrong: ' + data.error)
+        } else {
+          addChatMessage('bot', data.reply)
+        }
+      } catch (err) {
+        typing.remove()
+        addChatMessage('bot', 'Connection error. Please try again.')
+      }
+
+      chatSendBtn.disabled = false
+      chatInput.focus()
+    }
+
+    chatSendBtn.addEventListener('click', sendChat)
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        sendChat()
+      }
+    })
+
+    // Initial greeting
     setTimeout(() => {
-      statusDot.classList.add('connected')
-      statusText.textContent = 'Connected'
-      clientIdEl.textContent = assistant.clientId || ''
-      log('received', 'Connected to server')
-    }, 200)
-
-    // Get selected target
-    function getTarget() {
-      return document.getElementById('target-select').value
-    }
-
-    // Send action via server REST API
-    function sendAction(action) {
-      const target = getTarget()
-      const text = document.getElementById('message-text').value
-      const position = document.getElementById('position-select').value
-
-      let body = { action, target }
-      if (action === 'highlight') body.options = { duration: 2000 }
-      if (action === 'show_message') { body.text = text; body.options = { position, duration: 3000 } }
-      if (action === 'fill') body.value = text
-      if (action === 'ghost_cursor') body.options = { click: true }
-
-      log('sent', `ACTION: ${action} → ${target}`)
-
-      fetch('/api/command', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      }).then(r => r.json()).then(res => {
-        if (res.error) log('error', res.error)
-      })
-    }
-
-    // Send via server (same as sendAction but explicit label)
-    function sendViaServer(action) {
-      sendAction(action)
-    }
-
-    // Run predefined scenario
-    function runScenario(name) {
-      log('sent', `SCENARIO: ${name}`)
-      fetch('/api/scenario', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario: name })
-      }).then(r => r.json()).then(res => {
-        if (res.error) log('error', res.error)
-      })
-    }
-
-    // Fetch tool definitions
-    function fetchToolDefs() {
-      fetch('/api/tools').then(r => r.json()).then(tools => {
-        log('received', `TOOLS: ${tools.length} definitions`)
-        console.log('Tool definitions:', tools)
-        alert(`${tools.length} tools available. Check console for details.`)
-      })
-    }
+      addChatMessage('bot', "Hi! I'm your AI assistant. I can help you navigate this page — try asking me about features, pricing, or how to sign up!")
+    }, 500)
   </script>
+
 </body>
 </html>

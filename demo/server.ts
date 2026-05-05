@@ -1,45 +1,29 @@
 import { SiteAssistantServer } from 'site-assistant-server'
 import { createServer } from 'http'
-import { readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import OpenAI from 'openai'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const PORT = parseInt(process.env.PORT || '3100')
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 
-// Predefined scenarios
-const SCENARIOS = {
-  tour: [
-    { action: 'scroll' as const, target: 'hero' },
-    { action: 'highlight' as const, target: 'hero', options: { duration: 1500 } },
-    { action: 'scroll' as const, target: 'features' },
-    { action: 'highlight' as const, target: 'features', options: { duration: 1500 } },
-    { action: 'scroll' as const, target: 'pricing' },
-    { action: 'highlight' as const, target: 'pricing', options: { duration: 1500 } },
-    { action: 'ghost_cursor' as const, target: 'signup_button', options: { click: false } },
-    { action: 'show_message' as const, target: 'signup_button', text: 'Click here to get started!', options: { position: 'bottom' as const } },
-  ],
-  signup: [
-    { action: 'scroll' as const, target: 'signup_form' },
-    { action: 'highlight' as const, target: 'signup_form', options: { duration: 1500 } },
-    { action: 'ghost_cursor' as const, target: 'input_name', options: { click: true } },
-    { action: 'fill' as const, target: 'input_name', value: 'John Doe' },
-    { action: 'ghost_cursor' as const, target: 'input_email', options: { click: true } },
-    { action: 'fill' as const, target: 'input_email', value: 'john@example.com' },
-    { action: 'ghost_cursor' as const, target: 'submit_button', options: { click: false } },
-    { action: 'show_message' as const, target: 'submit_button', text: 'Now click Submit!', options: { position: 'top' as const } },
-  ],
-  features: [
-    { action: 'scroll' as const, target: 'features' },
-    { action: 'highlight' as const, target: 'feature_speed', options: { duration: 1500 } },
-    { action: 'show_message' as const, target: 'feature_speed', text: 'Lightning fast builds', options: { position: 'bottom' as const } },
-    { action: 'highlight' as const, target: 'feature_security', options: { duration: 1500 } },
-    { action: 'show_message' as const, target: 'feature_security', text: 'Enterprise-grade protection', options: { position: 'bottom' as const } },
-    { action: 'highlight' as const, target: 'feature_scale', options: { duration: 1500 } },
-    { action: 'show_message' as const, target: 'feature_scale', text: 'From startup to enterprise', options: { position: 'bottom' as const } },
-  ],
+if (!OPENAI_API_KEY) {
+  console.error('ERROR: OPENAI_API_KEY environment variable is required')
+  process.exit(1)
 }
 
-// Parse JSON body
+const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
+
+// Serve static files
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.svg': 'image/svg+xml',
+}
+
 function parseBody(req: any): Promise<any> {
   return new Promise((resolve) => {
     let body = ''
@@ -52,85 +36,126 @@ function parseBody(req: any): Promise<any> {
 }
 
 const httpServer = createServer(async (req, res) => {
+  const url = req.url || '/'
+
   // Static files
-  if (req.url === '/' || req.url === '/index.html') {
+  if (url === '/' || url === '/index.html') {
     res.writeHead(200, { 'Content-Type': 'text/html' })
     res.end(readFileSync(join(__dirname, 'index.html')))
     return
   }
-  if (req.url === '/site-assistant.js') {
-    res.writeHead(200, { 'Content-Type': 'application/javascript' })
-    res.end(readFileSync(join(__dirname, '../packages/client/dist/index.umd.js')))
+  if (url === '/site-assistant.js') {
+    const bundlePath = join(__dirname, '../packages/client/dist/index.umd.js')
+    if (existsSync(bundlePath)) {
+      res.writeHead(200, { 'Content-Type': 'application/javascript' })
+      res.end(readFileSync(bundlePath))
+    } else {
+      res.writeHead(404)
+      res.end('Client bundle not found. Run pnpm build first.')
+    }
     return
   }
 
-  // REST API for control panel
+  // Chat API
+  if (req.method === 'POST' && url === '/api/chat') {
+    const { message, clientId } = await parseBody(req)
+    res.setHeader('Content-Type', 'application/json')
+
+    if (!message || !clientId) {
+      res.writeHead(400)
+      res.end(JSON.stringify({ error: 'message and clientId required' }))
+      return
+    }
+
+    try {
+      // Get current page state
+      let pageState = server.getPageState(clientId)
+      if (!pageState) {
+        try {
+          pageState = await server.requestState(clientId, 3000)
+        } catch {}
+      }
+
+      // Build context for OpenAI
+      const tools = server.getToolDefinitions('openai')
+      const systemPrompt = buildSystemPrompt(pageState)
+
+      const messages: any[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message },
+      ]
+
+      // Call OpenAI with tools
+      let response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        tools: tools.filter((t: any) =>
+          ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
+        ),
+        tool_choice: 'auto',
+      })
+
+      let assistantMessage = response.choices[0].message
+
+      // Process tool calls
+      while (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+        messages.push(assistantMessage)
+
+        for (const toolCall of assistantMessage.tool_calls) {
+          const args = JSON.parse(toolCall.function.arguments)
+          // Inject clientId into tool args
+          args.clientId = clientId
+          try {
+            const result = await server.executeTool(toolCall.function.name, args)
+            messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify(result),
+            })
+          } catch (err: any) {
+            messages.push({
+              role: 'tool',
+              tool_call_id: toolCall.id,
+              content: JSON.stringify({ error: err.message }),
+            })
+          }
+        }
+
+        response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages,
+          tools: tools.filter((t: any) =>
+            ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
+          ),
+          tool_choice: 'auto',
+        })
+        assistantMessage = response.choices[0].message
+      }
+
+      res.writeHead(200)
+      res.end(JSON.stringify({
+        reply: assistantMessage.content || 'Done!',
+      }))
+    } catch (err: any) {
+      console.error('Chat error:', err)
+      res.writeHead(500)
+      res.end(JSON.stringify({ error: err.message }))
+    }
+    return
+  }
+
+  // API endpoints
   res.setHeader('Content-Type', 'application/json')
 
-  if (req.method === 'GET' && req.url === '/api/tools') {
+  if (req.method === 'GET' && url === '/api/tools') {
     res.writeHead(200)
-    res.end(JSON.stringify(server.getToolDefinitions('anthropic')))
+    res.end(JSON.stringify(server.getToolDefinitions('openai')))
     return
   }
 
-  if (req.method === 'GET' && req.url === '/api/clients') {
+  if (req.method === 'GET' && url === '/api/clients') {
     res.writeHead(200)
     res.end(JSON.stringify(server.listClients()))
-    return
-  }
-
-  if (req.method === 'POST' && req.url === '/api/command') {
-    const body = await parseBody(req)
-    const clients = server.listClients()
-    if (clients.length === 0) {
-      res.writeHead(400)
-      res.end(JSON.stringify({ error: 'No clients connected' }))
-      return
-    }
-    try {
-      // Send to first connected client (demo assumes single client)
-      const clientId = clients[0].id
-      const actionId = server.sendCommand(clientId, body)
-      res.writeHead(200)
-      res.end(JSON.stringify({ ok: true, actionId }))
-    } catch (e: any) {
-      res.writeHead(400)
-      res.end(JSON.stringify({ error: e.message }))
-    }
-    return
-  }
-
-  if (req.method === 'POST' && req.url === '/api/message') {
-    const body = await parseBody(req)
-    const clients = server.listClients()
-    if (clients.length === 0) {
-      res.writeHead(400)
-      res.end(JSON.stringify({ error: 'No clients connected' }))
-      return
-    }
-    server.sendMessage(clients[0].id, body.text || 'Hello!')
-    res.writeHead(200)
-    res.end(JSON.stringify({ ok: true }))
-    return
-  }
-
-  if (req.method === 'POST' && req.url === '/api/scenario') {
-    const body = await parseBody(req)
-    const clients = server.listClients()
-    if (clients.length === 0) {
-      res.writeHead(400)
-      res.end(JSON.stringify({ error: 'No clients connected' }))
-      return
-    }
-    const steps = SCENARIOS[body.scenario as keyof typeof SCENARIOS]
-    if (!steps) {
-      res.writeHead(400)
-      res.end(JSON.stringify({ error: `Unknown scenario: ${body.scenario}` }))
-      return
-    }
-    server.sendScenario(clients[0].id, steps)
-    res.writeHead(200)
-    res.end(JSON.stringify({ ok: true, steps: steps.length }))
     return
   }
 
@@ -140,36 +165,63 @@ const httpServer = createServer(async (req, res) => {
 
 const server = new SiteAssistantServer({ server: httpServer })
 
+function buildSystemPrompt(pageState: any): string {
+  let elementsDescription = 'No page state available.'
+  if (pageState?.elements) {
+    const entries = Object.entries(pageState.elements).map(([name, info]: [string, any]) => {
+      const parts = [`- ${name} (${info.tag})`]
+      if (info.label) parts.push(`"${info.label}"`)
+      else if (info.text) parts.push(`"${info.text.slice(0, 60)}"`)
+      if (!info.visible) parts.push('[hidden]')
+      if (!info.enabled) parts.push('[disabled]')
+      if (info.value !== undefined) parts.push(`value="${info.value}"`)
+      if (info.inputType) parts.push(`type=${info.inputType}`)
+      return parts.join(' ')
+    })
+    elementsDescription = `Page: ${pageState.url}\nTitle: ${pageState.title}\n\nAvailable elements:\n${entries.join('\n')}`
+  }
+
+  return `You are an AI assistant helping users navigate a website. You can control the page by highlighting elements, scrolling to sections, clicking buttons, filling forms, showing messages near elements, and moving a ghost cursor.
+
+${elementsDescription}
+
+When helping users:
+- Use "highlight" to draw attention to elements (with a glowing border effect)
+- Use "scroll" to navigate to off-screen sections
+- Use "ghost_cursor" with click:true to demonstrate clicking something
+- Use "show_message" to annotate elements with helpful tips
+- Use "fill" to demonstrate form filling
+- Use "send_scenario" for multi-step guided tours
+- Keep your text responses concise and friendly
+- Always use the target names exactly as listed above
+- Respond in the same language the user writes in`
+}
+
 server.on('connection', (client) => {
-  console.log(`\n✓ Client connected: ${client.id}`)
-  console.log(`  Meta:`, client.meta)
+  console.log(`Client connected: ${client.id}`)
 })
 
 server.on('disconnect', (client) => {
-  console.log(`✗ Client disconnected: ${client.id}`)
+  console.log(`Client disconnected: ${client.id}`)
 })
 
-server.on('event', (client, event, payload) => {
-  console.log(`← Event [${client.id}]: ${event}`, payload || '')
+server.on('page_state', (client, state) => {
+  console.log(`Page state from ${client.id}: ${Object.keys(state.elements).length} elements`)
 })
 
-server.on('action_result', (client, actionId, success, error) => {
-  const icon = success ? '✓' : '✗'
-  console.log(`  ${icon} Result [${actionId.slice(0, 8)}]: ${success ? 'OK' : error}`)
+server.on('action_result', (_client, actionId, success, error) => {
+  const icon = success ? 'ok' : 'FAIL'
+  console.log(`  Action [${actionId.slice(0, 8)}]: ${icon}${error ? ' -- ' + error : ''}`)
 })
 
-httpServer.listen(3100, () => {
+httpServer.listen(PORT, () => {
   console.log(`
-╔══════════════════════════════════════════╗
-║   Site Assistant Demo                    ║
-║   http://localhost:3100                  ║
-╠══════════════════════════════════════════╣
-║   REST API:                              ║
-║   GET  /api/tools    — tool definitions  ║
-║   GET  /api/clients  — connected clients ║
-║   POST /api/command  — send action       ║
-║   POST /api/message  — send message      ║
-║   POST /api/scenario — run scenario      ║
-╚══════════════════════════════════════════╝
+===========================================
+  Site Assistant Demo
+  http://localhost:${PORT}
+
+  AI Chat: built-in (OpenAI)
+  WebSocket: same port
+===========================================
   `)
 })
