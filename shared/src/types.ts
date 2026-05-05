@@ -84,4 +84,9 @@ export interface ScenarioMessage {
   steps: Action[]
 }
 
-export type ServerMessage = CommandMessage | TextMessage | ScenarioMessage
+export interface ErrorMessage {
+  type: 'error'
+  reason: string
+}
+
+export type ServerMessage = CommandMessage | TextMessage | ScenarioMessage | ErrorMessage

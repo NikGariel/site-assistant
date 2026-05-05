@@ -117,6 +117,10 @@ export class SiteAssistant {
         this.fire('scenario_end')
         break
       }
+      case 'error': {
+        this.fire('error', (msg as any).reason)
+        break
+      }
     }
   }
 

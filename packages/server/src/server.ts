@@ -10,6 +10,8 @@ export interface SiteAssistantServerOptions {
   port?: number
   server?: HttpServer
   maxCommandsPerSecond?: number
+  /** Called when a client connects. Return false or throw to reject. */
+  onAuth?: (clientId: string, meta: Record<string, any>) => boolean | Promise<boolean>
 }
 
 export class SiteAssistantServer extends EventEmitter {
@@ -21,11 +23,13 @@ export class SiteAssistantServer extends EventEmitter {
   private commandCounts = new Map<string, number>()
   private rateLimitTimer: NodeJS.Timeout | null = null
   private maxCommandsPerSecond: number
+  private onAuth?: (clientId: string, meta: Record<string, any>) => boolean | Promise<boolean>
 
   constructor(options: SiteAssistantServerOptions) {
     super()
     this.connections = new ConnectionManager()
     this.maxCommandsPerSecond = options.maxCommandsPerSecond ?? 10
+    this.onAuth = options.onAuth
 
     if (options.server) {
       this.wss = new WebSocketServer({ server: options.server })
@@ -58,11 +62,11 @@ export class SiteAssistantServer extends EventEmitter {
         this.aliveMap.set(ws, true)
       })
 
-      ws.on('message', (raw) => {
+      ws.on('message', async (raw) => {
         try {
           const data = JSON.parse(raw.toString())
           if (!data || typeof data !== 'object' || !data.type) return
-          this.handleMessage(ws, data as ClientMessage)
+          await this.handleMessage(ws, data as ClientMessage)
         } catch {
           // Invalid JSON — ignore
         }
@@ -86,7 +90,7 @@ export class SiteAssistantServer extends EventEmitter {
     })
   }
 
-  private handleMessage(ws: WebSocket, msg: ClientMessage): void {
+  private async handleMessage(ws: WebSocket, msg: ClientMessage): Promise<void> {
     switch (msg.type) {
       case 'connect': {
         if (typeof msg.clientId !== 'string' || !msg.meta || typeof msg.meta !== 'object') return
@@ -95,6 +99,23 @@ export class SiteAssistantServer extends EventEmitter {
           clearTimeout(t)
           this.pendingSockets.delete(ws)
         }
+
+        // Auth check
+        if (this.onAuth) {
+          try {
+            const allowed = await this.onAuth(msg.clientId, msg.meta)
+            if (allowed === false) {
+              ws.send(JSON.stringify({ type: 'error', reason: 'Unauthorized' }))
+              ws.close()
+              return
+            }
+          } catch (err: any) {
+            ws.send(JSON.stringify({ type: 'error', reason: err.message || 'Auth failed' }))
+            ws.close()
+            return
+          }
+        }
+
         this.connections.add(msg.clientId, ws, msg.meta)
         this.emit('connection', { id: msg.clientId, meta: msg.meta })
         break
@@ -172,6 +193,16 @@ export class SiteAssistantServer extends EventEmitter {
   async executeTool(toolName: string, args: Record<string, any>): Promise<any> {
     const executor = new ToolExecutor(this)
     return executor.execute(toolName, args)
+  }
+
+  /** Force disconnect a client */
+  disconnect(clientId: string, reason?: string): void {
+    const client = this.connections.get(clientId)
+    if (!client) return
+    if (reason) {
+      client.ws.send(JSON.stringify({ type: 'error', reason }))
+    }
+    client.ws.close()
   }
 
   close(): void {

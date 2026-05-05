@@ -164,4 +164,43 @@ describe('SiteAssistantServer', () => {
     expect(onDisconnect).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }))
     expect(server.findClients({ userId: '123' })).toHaveLength(0)
   })
+
+  it('rejects unauthorized clients via onAuth', async () => {
+    const authServer = new SiteAssistantServer({
+      port: 9877,
+      onAuth: (clientId, meta) => meta.token === 'valid-token'
+    })
+    await new Promise((r) => setTimeout(r, 100))
+
+    // Valid client
+    const ws1 = await connectClient(9877, 'c1', { token: 'valid-token' })
+    expect(authServer.findClients({ token: 'valid-token' })).toHaveLength(1)
+
+    // Invalid client — should be disconnected
+    const ws2 = new WebSocket('ws://localhost:9877')
+    const closePromise = new Promise<void>((resolve) => {
+      ws2.on('close', () => resolve())
+    })
+    ws2.on('open', () => {
+      ws2.send(JSON.stringify({ type: 'connect', clientId: 'c2', meta: { token: 'bad' } }))
+    })
+    await closePromise
+    expect(authServer.findClients({ token: 'bad' })).toHaveLength(0)
+
+    ws1.close()
+    authServer.close()
+    await new Promise((r) => setTimeout(r, 100))
+  })
+
+  it('force disconnects a client', async () => {
+    const ws = await connectClient(port, 'c1', { userId: '123' })
+    const closePromise = new Promise<void>((resolve) => {
+      ws.on('close', () => resolve())
+    })
+
+    server.disconnect('c1', 'Session expired')
+    await closePromise
+    await new Promise((r) => setTimeout(r, 50))
+    expect(server.findClients({ userId: '123' })).toHaveLength(0)
+  })
 })
