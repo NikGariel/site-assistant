@@ -188,6 +188,48 @@ Server:
 - On reconnect with same clientId: replaces old entry
 - sendCommand to non-existent client: returns error
 
+## AI Integration Layer
+
+Two built-in mechanisms for AI to call server methods:
+
+### MCP Server (built-in)
+
+```typescript
+import { SiteAssistantServer } from 'site-assistant-server'
+
+const server = new SiteAssistantServer({ port: 3100 })
+
+// Start MCP server (SSE transport on separate port, or stdio)
+server.startMCP({ transport: 'sse', port: 3101 })
+// or: server.startMCP({ transport: 'stdio' })
+```
+
+Exposed MCP tools:
+- `find_clients({ filter })` — find connected clients by meta
+- `send_command({ clientId, action })` — send single action
+- `send_message({ clientId, text })` — send text message
+- `send_scenario({ clientId, steps })` — send step-by-step guide
+- `list_clients()` — list all connected clients with their meta
+
+### Tool Schema Generator
+
+For non-MCP setups (OpenAI function calling, Anthropic tools, etc.):
+
+```typescript
+// Get tool definitions in desired format
+const tools = server.getToolDefinitions('anthropic') // or 'openai'
+
+// Execute a tool call from LLM response
+const result = await server.executeTool(toolName, toolArgs)
+```
+
+Supported formats:
+- `'anthropic'` — Anthropic tool_use format
+- `'openai'` — OpenAI function calling format
+- `'raw'` — plain JSON Schema
+
+Both mechanisms expose the same set of operations. MCP is for agent frameworks that support it natively; tool schemas are for direct LLM API usage.
+
 ## Build & Distribution
 
 - **Client**: tsup → ESM (`site-assistant-client.mjs`) + UMD (`site-assistant-client.umd.js`). CSS inlined in JS.
@@ -197,8 +239,8 @@ Server:
 
 ## Non-goals
 
-- No AI/LLM logic
-- No REST API (server exposes only programmatic API, user wraps as needed)
+- No AI/LLM logic (but exposes tools for AI to call)
+- No REST API (server exposes programmatic API + MCP + tool schemas)
 - No offline queue / message persistence
 - No CSS selector fallback (strict data-ai only)
 - No automatic DOM scanning
