@@ -1,6 +1,6 @@
 {
   "name": "site-assistant-client",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Browser SDK for AI-driven UI control — highlight, scroll, click, ghost cursor, tooltips via WebSocket",
   "license": "MIT",
   "keywords": ["websocket", "ai", "assistant", "ui-control", "browser", "sdk", "highlight", "ghost-cursor", "automation"],

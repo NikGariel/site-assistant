@@ -75,5 +75,25 @@ export function createMCPServer(server: SiteAssistantServer): McpServer {
     }
   )
 
+  mcp.tool(
+    'get_page_state',
+    'Get the last known page state for a client (URL, title, all elements with visibility and values)',
+    { clientId: z.string().describe('Target client ID') },
+    async ({ clientId }) => {
+      const state = server.getPageState(clientId)
+      return { content: [{ type: 'text', text: JSON.stringify(state ?? { error: 'No state available yet' }, null, 2) }] }
+    }
+  )
+
+  mcp.tool(
+    'request_page_state',
+    'Request fresh page state from a client (waits for response). Use before deciding which actions to take.',
+    { clientId: z.string().describe('Target client ID') },
+    async ({ clientId }) => {
+      const state = await server.requestState(clientId)
+      return { content: [{ type: 'text', text: JSON.stringify(state, null, 2) }] }
+    }
+  )
+
   return mcp
 }

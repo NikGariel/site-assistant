@@ -18,4 +18,8 @@ export class ElementResolver {
 
     return null
   }
+
+  getRegistered(): Map<string, string> {
+    return this.registry
+  }
 }

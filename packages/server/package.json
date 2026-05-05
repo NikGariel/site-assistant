@@ -1,6 +1,6 @@
 {
   "name": "site-assistant-server",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "WebSocket server for remote UI control — send commands to browser windows via AI tools or MCP",
   "license": "MIT",
   "keywords": ["websocket", "ai", "assistant", "ui-control", "mcp", "tools", "remote-control", "highlight", "automation"],

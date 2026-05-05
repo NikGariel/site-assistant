@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { EventEmitter } from 'events'
 import { ConnectionManager, ClientEntry } from './connection-manager.js'
-import type { Action, ClientMessage, ServerMessage } from 'site-assistant-shared'
+import type { Action, ClientMessage, ServerMessage, PageState } from 'site-assistant-shared'
 import { randomUUID } from 'crypto'
 import type { Server as HttpServer } from 'http'
 import { ToolExecutor } from './tools.js'
@@ -20,6 +20,8 @@ export class SiteAssistantServer extends EventEmitter {
   private pendingSockets = new Map<WebSocket, NodeJS.Timeout>()
   private aliveMap = new Map<WebSocket, boolean>()
   private pingTimer: NodeJS.Timeout | null = null
+  private clientStates = new Map<string, PageState>()
+  private stateRequests = new Map<string, (state: PageState) => void>()
   private commandCounts = new Map<string, number>()
   private rateLimitTimer: NodeJS.Timeout | null = null
   private maxCommandsPerSecond: number
@@ -84,6 +86,7 @@ export class SiteAssistantServer extends EventEmitter {
         const client = this.findClientByWs(ws)
         if (client) {
           this.connections.remove(client.id)
+          this.clientStates.delete(client.id)
           this.emit('disconnect', { id: client.id, meta: client.meta })
         }
       })
@@ -133,6 +136,22 @@ export class SiteAssistantServer extends EventEmitter {
         const client = this.findClientByWs(ws)
         if (client) {
           this.emit('action_result', { id: client.id, meta: client.meta }, msg.actionId, msg.success, msg.error)
+        }
+        break
+      }
+      case 'page_state': {
+        const client = this.findClientByWs(ws)
+        if (client && (msg as any).state) {
+          const state = (msg as any).state as PageState
+          this.clientStates.set(client.id, state)
+          this.emit('page_state', { id: client.id, meta: client.meta }, state)
+
+          // Resolve pending requestState promise
+          const requestId = (msg as any).requestId
+          if (requestId && this.stateRequests.has(requestId)) {
+            this.stateRequests.get(requestId)!(state)
+            this.stateRequests.delete(requestId)
+          }
         }
         break
       }
@@ -193,6 +212,32 @@ export class SiteAssistantServer extends EventEmitter {
   async executeTool(toolName: string, args: Record<string, any>): Promise<any> {
     const executor = new ToolExecutor(this)
     return executor.execute(toolName, args)
+  }
+
+  /** Get the last known page state for a client */
+  getPageState(clientId: string): PageState | undefined {
+    return this.clientStates.get(clientId)
+  }
+
+  /** Request fresh page state from client (returns promise) */
+  requestState(clientId: string, timeout = 5000): Promise<PageState> {
+    const client = this.connections.get(clientId)
+    if (!client) return Promise.reject(new Error(`Client "${clientId}" not connected`))
+
+    const requestId = randomUUID()
+    client.ws.send(JSON.stringify({ type: 'request_state', requestId }))
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.stateRequests.delete(requestId)
+        reject(new Error(`State request timed out for client "${clientId}"`))
+      }, timeout)
+
+      this.stateRequests.set(requestId, (state) => {
+        clearTimeout(timer)
+        resolve(state)
+      })
+    })
   }
 
   /** Force disconnect a client */

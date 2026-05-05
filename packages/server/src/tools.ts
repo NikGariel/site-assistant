@@ -94,6 +94,28 @@ const TOOL_DEFS = [
       required: ['clientId', 'steps'],
     },
   },
+  {
+    name: 'get_page_state',
+    description: 'Get the last known page state for a client (URL, title, all available elements with visibility, text, and form values)',
+    schema: {
+      type: 'object',
+      properties: {
+        clientId: { type: 'string', description: 'Target client ID' },
+      },
+      required: ['clientId'],
+    },
+  },
+  {
+    name: 'request_page_state',
+    description: 'Request fresh page state from a client (async — waits for response). Use this to get current element visibility, values, and positions before deciding which actions to take.',
+    schema: {
+      type: 'object',
+      properties: {
+        clientId: { type: 'string', description: 'Target client ID' },
+      },
+      required: ['clientId'],
+    },
+  },
 ]
 
 export class ToolExecutor {
@@ -141,6 +163,10 @@ export class ToolExecutor {
       case 'send_scenario':
         this.server.sendScenario(args.clientId, args.steps as Action[])
         return { sent: true }
+      case 'get_page_state':
+        return this.server.getPageState(args.clientId) ?? { error: 'No state available yet' }
+      case 'request_page_state':
+        return await this.server.requestState(args.clientId)
       default:
         throw new Error(`Unknown tool: "${toolName}"`)
     }
