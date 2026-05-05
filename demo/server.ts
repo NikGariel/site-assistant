@@ -8,13 +8,18 @@ import OpenAI from 'openai'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PORT = parseInt(process.env.PORT || '3100')
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
+const OPENAI_BASE_URL = process.env.OPENAI_BASE_URL
+const MODEL = process.env.MODEL || 'gpt-4o-mini'
 
 if (!OPENAI_API_KEY) {
   console.error('ERROR: OPENAI_API_KEY environment variable is required')
   process.exit(1)
 }
 
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY })
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+  ...(OPENAI_BASE_URL && { baseURL: OPENAI_BASE_URL }),
+})
 
 // Serve static files
 const MIME_TYPES: Record<string, string> = {
@@ -87,7 +92,7 @@ const httpServer = createServer(async (req, res) => {
 
       // Call OpenAI with tools
       let response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: MODEL,
         messages,
         tools: tools.filter((t: any) =>
           ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
@@ -122,7 +127,7 @@ const httpServer = createServer(async (req, res) => {
         }
 
         response = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: MODEL,
           messages,
           tools: tools.filter((t: any) =>
             ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
@@ -220,7 +225,8 @@ httpServer.listen(PORT, () => {
   Site Assistant Demo
   http://localhost:${PORT}
 
-  AI Chat: built-in (OpenAI)
+  Model: ${MODEL}
+  Base URL: ${OPENAI_BASE_URL || 'https://api.openai.com/v1'}
   WebSocket: same port
 ===========================================
   `)
