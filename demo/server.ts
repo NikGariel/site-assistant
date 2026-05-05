@@ -61,16 +61,22 @@ const httpServer = createServer(async (req, res) => {
     return
   }
 
-  // Chat API
+  // Chat API — SSE streaming
   if (req.method === 'POST' && url === '/api/chat') {
     const { message, clientId } = await parseBody(req)
-    res.setHeader('Content-Type', 'application/json')
 
     if (!message || !clientId) {
-      res.writeHead(400)
+      res.writeHead(400, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: 'message and clientId required' }))
       return
     }
+
+    // SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    })
 
     try {
       // Get current page state
@@ -81,8 +87,10 @@ const httpServer = createServer(async (req, res) => {
         } catch {}
       }
 
-      // Build context for OpenAI
       const tools = server.getToolDefinitions('openai')
+      const filteredTools = tools.filter((t: any) =>
+        ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
+      )
       const systemPrompt = buildSystemPrompt(pageState)
 
       const messages: any[] = [
@@ -90,61 +98,58 @@ const httpServer = createServer(async (req, res) => {
         { role: 'user', content: message },
       ]
 
-      // Call OpenAI with tools
-      let response = await openai.chat.completions.create({
-        model: MODEL,
-        messages,
-        tools: tools.filter((t: any) =>
-          ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
-        ),
-        tool_choice: 'auto',
-      })
-
-      let assistantMessage = response.choices[0].message
-
-      // Process tool calls
-      while (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-        messages.push(assistantMessage)
-
-        for (const toolCall of assistantMessage.tool_calls) {
-          const args = JSON.parse(toolCall.function.arguments)
-          // Inject clientId into tool args
-          args.clientId = clientId
-          try {
-            const result = await server.executeTool(toolCall.function.name, args)
-            messages.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: JSON.stringify(result),
-            })
-          } catch (err: any) {
-            messages.push({
-              role: 'tool',
-              tool_call_id: toolCall.id,
-              content: JSON.stringify({ error: err.message }),
-            })
-          }
-        }
-
-        response = await openai.chat.completions.create({
+      // Tool call loop (non-streaming — tools need full response)
+      let needsStreaming = true
+      while (true) {
+        const response = await openai.chat.completions.create({
           model: MODEL,
           messages,
-          tools: tools.filter((t: any) =>
-            ['send_command', 'send_message', 'send_scenario'].includes(t.function.name)
-          ),
+          tools: filteredTools,
           tool_choice: 'auto',
         })
-        assistantMessage = response.choices[0].message
+
+        const msg = response.choices[0].message
+
+        if (msg.tool_calls && msg.tool_calls.length > 0) {
+          messages.push(msg)
+          for (const toolCall of msg.tool_calls) {
+            const args = JSON.parse(toolCall.function.arguments)
+            args.clientId = clientId
+            try {
+              const result = await server.executeTool(toolCall.function.name, args)
+              messages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify(result) })
+            } catch (err: any) {
+              messages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) })
+            }
+          }
+          // Continue loop for next LLM call
+        } else {
+          // No tool calls — now stream the final text response
+          messages.push(msg)
+          break
+        }
       }
 
-      res.writeHead(200)
-      res.end(JSON.stringify({
-        reply: assistantMessage.content || 'Done!',
-      }))
+      // Stream the final response
+      const stream = await openai.chat.completions.create({
+        model: MODEL,
+        messages,
+        stream: true,
+      })
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content
+        if (content) {
+          res.write(`data: ${JSON.stringify({ text: content })}\n\n`)
+        }
+      }
+
+      res.write(`data: [DONE]\n\n`)
+      res.end()
     } catch (err: any) {
       console.error('Chat error:', err)
-      res.writeHead(500)
-      res.end(JSON.stringify({ error: err.message }))
+      res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
+      res.end()
     }
     return
   }
