@@ -1,0 +1,12 @@
+{
+  "name": "site-assistant-demo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx server.ts"
+  },
+  "dependencies": {
+    "site-assistant-server": "workspace:*",
+    "tsx": "^4.0.0"
+  }
+}

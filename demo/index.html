@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Assistant Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; line-height: 1.6; color: #333; }
+    header { background: #1a1a2e; color: #fff; padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; }
+    header h1 { font-size: 1.5rem; }
+    nav a { color: #a8b2d1; margin-left: 20px; text-decoration: none; }
+    .hero { padding: 80px 40px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; }
+    .hero h2 { font-size: 2.5rem; margin-bottom: 20px; }
+    .hero p { font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px; }
+    .btn { display: inline-block; padding: 12px 32px; border-radius: 6px; font-size: 1rem; cursor: pointer; border: none; }
+    .btn-primary { background: #4f96ff; color: #fff; }
+    .features { padding: 60px 40px; max-width: 900px; margin: 0 auto; }
+    .features h3 { font-size: 1.8rem; margin-bottom: 30px; text-align: center; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feature-card { background: #f7f8fc; padding: 24px; border-radius: 8px; text-align: center; }
+    .pricing { padding: 60px 40px; background: #f0f2f5; text-align: center; }
+    .pricing h3 { font-size: 1.8rem; margin-bottom: 30px; }
+    .form-section { padding: 60px 40px; max-width: 500px; margin: 0 auto; }
+    .form-section input { display: block; width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+  </style>
+</head>
+<body>
+  <header data-ai="header">
+    <h1>Acme Corp</h1>
+    <nav>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <button class="btn btn-primary" data-ai="signup_button">Sign Up</button>
+    </nav>
+  </header>
+
+  <section class="hero" data-ai="hero">
+    <h2>Build something amazing</h2>
+    <p>The best platform for your next project. Fast, reliable, and beautiful.</p>
+    <button class="btn btn-primary" data-ai="cta_button">Get Started</button>
+  </section>
+
+  <section class="features" id="features" data-ai="features">
+    <h3>Features</h3>
+    <div class="feature-grid">
+      <div class="feature-card" data-ai="feature_speed">
+        <h4>Fast</h4>
+        <p>Lightning fast performance</p>
+      </div>
+      <div class="feature-card" data-ai="feature_security">
+        <h4>Secure</h4>
+        <p>Enterprise-grade security</p>
+      </div>
+      <div class="feature-card" data-ai="feature_scale">
+        <h4>Scalable</h4>
+        <p>Grows with your business</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="pricing" id="pricing" data-ai="pricing">
+    <h3>Pricing</h3>
+    <p>Simple, transparent pricing for everyone.</p>
+  </section>
+
+  <section class="form-section" data-ai="signup_form">
+    <h3>Create Account</h3>
+    <input type="text" placeholder="Name" data-ai="input_name" />
+    <input type="email" placeholder="Email" data-ai="input_email" />
+    <button class="btn btn-primary" data-ai="submit_button">Create Account</button>
+  </section>
+
+  <script src="/site-assistant.js"></script>
+  <script>
+    const assistant = new SiteAssistantSDK.SiteAssistant({
+      url: `ws://${location.host}`,
+      meta: { userId: 'demo-user', page: location.pathname }
+    })
+    assistant.on('message', (text) => {
+      console.log('[AI Message]', text)
+    })
+    assistant.on('scenario_start', () => console.log('[Scenario started]'))
+    assistant.on('scenario_end', () => console.log('[Scenario ended]'))
+    assistant.connect()
+  </script>
+</body>
+</html>
