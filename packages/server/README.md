@@ -1,6 +1,6 @@
 # site-assistant-server
 
-WebSocket server library for remote browser UI control. Part of [site-assistant](https://github.com/nicktomlin/site-assistant).
+WebSocket server library for remote browser UI control. Part of [site-assistant](https://github.com/NikGariel/site-assistant).
 
 ## Install
 

@@ -1,6 +1,6 @@
 # site-assistant-client
 
-Browser SDK for AI-driven UI control via WebSocket. Receives commands and executes visual actions (highlight, scroll, click, ghost cursor, tooltips). Part of [site-assistant](https://github.com/nicktomlin/site-assistant).
+Browser SDK for AI-driven UI control via WebSocket. Receives commands and executes visual actions (highlight, scroll, click, ghost cursor, tooltips). Part of [site-assistant](https://github.com/NikGariel/site-assistant).
 
 ## Install
 
