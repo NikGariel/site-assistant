@@ -16,16 +16,14 @@ describe('Actions', () => {
   })
 
   describe('highlight', () => {
-    it('adds overlay and highlight class, removes after duration', async () => {
+    it('adds cutout overlay and removes after duration', async () => {
       const el = document.querySelector<HTMLElement>('[data-ai="btn"]')!
       const promise = highlight(el, { duration: 100 })
 
-      expect(document.querySelector('.sa-overlay')).not.toBeNull()
-      expect(el.classList.contains('sa-highlight')).toBe(true)
+      expect(document.querySelector('.sa-overlay-cutout')).not.toBeNull()
 
       await promise
-      expect(document.querySelector('.sa-overlay')).toBeNull()
-      expect(el.classList.contains('sa-highlight')).toBe(false)
+      expect(document.querySelector('.sa-overlay-cutout')).toBeNull()
     })
   })
 

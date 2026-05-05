@@ -119,24 +119,6 @@ export function injectThemedStyles(): void {
   const stepPos = getStepPosition(t.stepIndicatorPosition)
 
   const css = `
-.sa-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: var(--sa-overlay);
-  z-index: var(--sa-z-base);
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-.sa-highlight {
-  position: relative;
-  z-index: calc(var(--sa-z-base) + 1);
-  box-shadow: 0 0 0 var(--sa-highlight-border-width) var(--sa-primary),
-              0 0 var(--sa-highlight-glow-spread) var(--sa-highlight-glow-color);
-  border-radius: var(--sa-highlight-border-radius);
-  transition: box-shadow 0.3s;
-}
-
 .sa-tooltip {
   position: absolute;
   z-index: calc(var(--sa-z-base) + 2);
