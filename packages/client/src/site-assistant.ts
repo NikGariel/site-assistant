@@ -17,7 +17,7 @@ export class SiteAssistant {
   private resolver: ElementResolver
   private executor: Executor
   private handlers = new Map<string, EventHandler[]>()
-  private clientId: string
+  readonly clientId: string
 
   constructor(options: SiteAssistantOptions) {
     this.clientId =

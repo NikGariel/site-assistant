@@ -23,6 +23,128 @@
     .pricing h3 { font-size: 1.8rem; margin-bottom: 30px; }
     .form-section { padding: 60px 40px; max-width: 500px; margin: 0 auto; }
     .form-section input { display: block; width: 100%; padding: 10px; margin-bottom: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+
+    /* Control Panel */
+    .control-panel {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 360px;
+      height: 100vh;
+      background: #1a1a2e;
+      color: #e0e0e0;
+      overflow-y: auto;
+      z-index: 200000;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+    }
+    .control-panel h2 {
+      padding: 16px 20px;
+      font-size: 1rem;
+      border-bottom: 1px solid #2a2a4e;
+      color: #4f96ff;
+    }
+    .control-section {
+      padding: 12px 20px;
+      border-bottom: 1px solid #2a2a4e;
+    }
+    .control-section h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .control-section .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .ctrl-btn {
+      padding: 6px 12px;
+      border: 1px solid #4f96ff;
+      background: transparent;
+      color: #4f96ff;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .ctrl-btn:hover {
+      background: #4f96ff;
+      color: #fff;
+    }
+    .ctrl-btn.green { border-color: #4caf50; color: #4caf50; }
+    .ctrl-btn.green:hover { background: #4caf50; color: #fff; }
+    .ctrl-btn.orange { border-color: #ff9800; color: #ff9800; }
+    .ctrl-btn.orange:hover { background: #ff9800; color: #fff; }
+    .ctrl-btn.purple { border-color: #9c27b0; color: #9c27b0; }
+    .ctrl-btn.purple:hover { background: #9c27b0; color: #fff; }
+
+    .target-select {
+      width: 100%;
+      padding: 6px 10px;
+      background: #2a2a4e;
+      border: 1px solid #3a3a5e;
+      color: #e0e0e0;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+    .text-input {
+      width: 100%;
+      padding: 6px 10px;
+      background: #2a2a4e;
+      border: 1px solid #3a3a5e;
+      color: #e0e0e0;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+    }
+
+    /* Event Log */
+    .event-log {
+      flex: 1;
+      padding: 12px 20px;
+      overflow-y: auto;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 0.75rem;
+      min-height: 200px;
+    }
+    .event-log h3 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .log-entry {
+      padding: 3px 0;
+      border-bottom: 1px solid #2a2a4e;
+      word-break: break-all;
+    }
+    .log-entry.sent { color: #4f96ff; }
+    .log-entry.received { color: #4caf50; }
+    .log-entry.error { color: #f44336; }
+    .log-entry .time { color: #666; margin-right: 6px; }
+
+    /* Connection status */
+    .status-bar {
+      padding: 8px 20px;
+      background: #0d0d1a;
+      font-size: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f44336;
+    }
+    .status-dot.connected { background: #4caf50; }
   </style>
 </head>
 <body>
@@ -71,18 +193,187 @@
     <button class="btn btn-primary" data-ai="submit_button">Create Account</button>
   </section>
 
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <h2>Site Assistant — Control Panel</h2>
+
+    <div class="status-bar">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Disconnected</span>
+      <span style="margin-left:auto; color:#666" id="client-id"></span>
+    </div>
+
+    <div class="control-section">
+      <h3>Target Element</h3>
+      <select class="target-select" id="target-select">
+        <option value="header">header</option>
+        <option value="signup_button">signup_button</option>
+        <option value="hero">hero</option>
+        <option value="cta_button">cta_button</option>
+        <option value="features">features</option>
+        <option value="feature_speed">feature_speed</option>
+        <option value="feature_security">feature_security</option>
+        <option value="feature_scale">feature_scale</option>
+        <option value="pricing">pricing</option>
+        <option value="signup_form">signup_form</option>
+        <option value="input_name">input_name</option>
+        <option value="input_email">input_email</option>
+        <option value="submit_button">submit_button</option>
+      </select>
+    </div>
+
+    <div class="control-section">
+      <h3>Single Actions</h3>
+      <div class="btn-row">
+        <button class="ctrl-btn" onclick="sendAction('highlight')">Highlight</button>
+        <button class="ctrl-btn" onclick="sendAction('scroll')">Scroll</button>
+        <button class="ctrl-btn" onclick="sendAction('click')">Click</button>
+        <button class="ctrl-btn" onclick="sendAction('ghost_cursor')">Ghost Cursor</button>
+        <button class="ctrl-btn" onclick="sendAction('show_message')">Show Message</button>
+        <button class="ctrl-btn" onclick="sendAction('fill')">Fill Input</button>
+      </div>
+    </div>
+
+    <div class="control-section">
+      <h3>Action Options</h3>
+      <input class="text-input" id="message-text" placeholder="Message text / fill value" value="Hello from AI!" />
+      <select class="target-select" id="position-select">
+        <option value="top">Position: top</option>
+        <option value="bottom">Position: bottom</option>
+        <option value="left">Position: left</option>
+        <option value="right">Position: right</option>
+      </select>
+    </div>
+
+    <div class="control-section">
+      <h3>Scenarios (via server)</h3>
+      <div class="btn-row">
+        <button class="ctrl-btn green" onclick="runScenario('tour')">Full Tour</button>
+        <button class="ctrl-btn green" onclick="runScenario('signup')">Signup Guide</button>
+        <button class="ctrl-btn green" onclick="runScenario('features')">Show Features</button>
+      </div>
+    </div>
+
+    <div class="control-section">
+      <h3>Server API (REST)</h3>
+      <div class="btn-row">
+        <button class="ctrl-btn orange" onclick="sendViaServer('highlight')">Server: Highlight</button>
+        <button class="ctrl-btn orange" onclick="sendViaServer('scroll')">Server: Scroll</button>
+        <button class="ctrl-btn orange" onclick="sendViaServer('ghost_cursor')">Server: Ghost</button>
+        <button class="ctrl-btn purple" onclick="fetchToolDefs()">Get Tool Defs</button>
+      </div>
+    </div>
+
+    <div class="event-log" id="event-log">
+      <h3>Event Log</h3>
+    </div>
+  </div>
+
   <script src="/site-assistant.js"></script>
   <script>
+    const logEl = document.getElementById('event-log')
+    const statusDot = document.getElementById('status-dot')
+    const statusText = document.getElementById('status-text')
+    const clientIdEl = document.getElementById('client-id')
+
+    function log(type, msg) {
+      const entry = document.createElement('div')
+      entry.className = `log-entry ${type}`
+      const time = new Date().toLocaleTimeString('en', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      entry.innerHTML = `<span class="time">${time}</span>${msg}`
+      logEl.appendChild(entry)
+      logEl.scrollTop = logEl.scrollHeight
+    }
+
+    // Init assistant
     const assistant = new SiteAssistantSDK.SiteAssistant({
       url: `ws://${location.host}`,
       meta: { userId: 'demo-user', page: location.pathname }
     })
+
     assistant.on('message', (text) => {
-      console.log('[AI Message]', text)
+      log('received', `MSG: ${text}`)
     })
-    assistant.on('scenario_start', () => console.log('[Scenario started]'))
-    assistant.on('scenario_end', () => console.log('[Scenario ended]'))
+    assistant.on('scenario_start', (steps) => {
+      log('received', `SCENARIO START (${steps.length} steps)`)
+    })
+    assistant.on('scenario_end', () => {
+      log('received', `SCENARIO END`)
+    })
+    assistant.on('disconnect', () => {
+      statusDot.classList.remove('connected')
+      statusText.textContent = 'Disconnected'
+      log('error', 'Disconnected')
+    })
+    assistant.on('reconnect', () => {
+      statusDot.classList.add('connected')
+      statusText.textContent = 'Connected'
+      log('received', 'Reconnected')
+    })
+
     assistant.connect()
+
+    // Mark connected after a short delay (connect msg sent)
+    setTimeout(() => {
+      statusDot.classList.add('connected')
+      statusText.textContent = 'Connected'
+      clientIdEl.textContent = assistant.clientId || ''
+      log('received', 'Connected to server')
+    }, 200)
+
+    // Get selected target
+    function getTarget() {
+      return document.getElementById('target-select').value
+    }
+
+    // Send action via server REST API
+    function sendAction(action) {
+      const target = getTarget()
+      const text = document.getElementById('message-text').value
+      const position = document.getElementById('position-select').value
+
+      let body = { action, target }
+      if (action === 'highlight') body.options = { duration: 2000 }
+      if (action === 'show_message') { body.text = text; body.options = { position, duration: 3000 } }
+      if (action === 'fill') body.value = text
+      if (action === 'ghost_cursor') body.options = { click: true }
+
+      log('sent', `ACTION: ${action} → ${target}`)
+
+      fetch('/api/command', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      }).then(r => r.json()).then(res => {
+        if (res.error) log('error', res.error)
+      })
+    }
+
+    // Send via server (same as sendAction but explicit label)
+    function sendViaServer(action) {
+      sendAction(action)
+    }
+
+    // Run predefined scenario
+    function runScenario(name) {
+      log('sent', `SCENARIO: ${name}`)
+      fetch('/api/scenario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenario: name })
+      }).then(r => r.json()).then(res => {
+        if (res.error) log('error', res.error)
+      })
+    }
+
+    // Fetch tool definitions
+    function fetchToolDefs() {
+      fetch('/api/tools').then(r => r.json()).then(tools => {
+        log('received', `TOOLS: ${tools.length} definitions`)
+        console.log('Tool definitions:', tools)
+        alert(`${tools.length} tools available. Check console for details.`)
+      })
+    }
   </script>
 </body>
 </html>
