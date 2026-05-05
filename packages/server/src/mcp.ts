@@ -17,7 +17,7 @@ export function createMCPServer(server: SiteAssistantServer): McpServer {
   mcp.tool(
     'find_clients',
     'Find connected clients by metadata filter',
-    { filter: z.record(z.any()).describe('Key-value pairs to match against client meta') },
+    { filter: z.record(z.string(), z.any()).describe('Key-value pairs to match against client meta') },
     async ({ filter }) => {
       const clients = server.findClients(filter)
       return { content: [{ type: 'text', text: JSON.stringify(clients, null, 2) }] }
@@ -34,7 +34,7 @@ export function createMCPServer(server: SiteAssistantServer): McpServer {
         target: z.string(),
         value: z.string().optional(),
         text: z.string().optional(),
-        options: z.record(z.any()).optional(),
+        options: z.record(z.string(), z.any()).optional(),
       }).describe('Action to execute'),
     },
     async ({ clientId, action }) => {
@@ -66,7 +66,7 @@ export function createMCPServer(server: SiteAssistantServer): McpServer {
         target: z.string(),
         value: z.string().optional(),
         text: z.string().optional(),
-        options: z.record(z.any()).optional(),
+        options: z.record(z.string(), z.any()).optional(),
       })).describe('Ordered list of actions'),
     },
     async ({ clientId, steps }) => {
