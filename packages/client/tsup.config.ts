@@ -14,5 +14,6 @@ export default defineConfig([
     globalName: 'SiteAssistantSDK',
     outExtension: () => ({ js: '.umd.js' }),
     sourcemap: true,
+    minify: true,
   },
 ])

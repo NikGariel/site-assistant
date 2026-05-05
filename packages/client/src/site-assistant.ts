@@ -135,4 +135,14 @@ export class SiteAssistant {
     this.stepIndicatorEl?.remove()
     this.stepIndicatorEl = null
   }
+
+  /** Full cleanup for SPA route changes */
+  destroy(): void {
+    this.disconnect()
+    this.handlers.clear()
+    this.removeStepIndicator()
+    // Remove injected styles
+    const styleEl = document.querySelector('style[data-sa]')
+    if (styleEl) styleEl.remove()
+  }
 }
