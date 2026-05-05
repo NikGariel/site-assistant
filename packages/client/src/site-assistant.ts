@@ -2,12 +2,15 @@ import { Connection } from './connection.js'
 import { ElementResolver } from './element-resolver.js'
 import { Executor } from './executor.js'
 import { injectStyles } from './styles.js'
+import { setTheme, type SiteAssistantTheme } from './theme.js'
 import type { ServerMessage } from 'site-assistant-shared'
 
 export interface SiteAssistantOptions {
   url: string
   meta: Record<string, any>
   clientId?: string
+  /** Customize colors, cursor, tooltip, etc. */
+  theme?: SiteAssistantTheme
 }
 
 type EventHandler = (...args: any[]) => void
@@ -17,9 +20,11 @@ export class SiteAssistant {
   private resolver: ElementResolver
   private executor: Executor
   private handlers = new Map<string, EventHandler[]>()
+  private options: SiteAssistantOptions
   readonly clientId: string
 
   constructor(options: SiteAssistantOptions) {
+    this.options = options
     this.clientId =
       options.clientId ??
       (typeof crypto !== 'undefined' && crypto.randomUUID
@@ -40,8 +45,16 @@ export class SiteAssistant {
   }
 
   connect(): void {
+    if (this.options.theme) {
+      setTheme(this.options.theme)
+    }
     injectStyles()
     this.connection.connect()
+  }
+
+  /** Update theme at runtime */
+  setTheme(theme: SiteAssistantTheme): void {
+    setTheme(theme)
   }
 
   disconnect(): void {
