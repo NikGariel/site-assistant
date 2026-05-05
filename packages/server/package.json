@@ -1,0 +1,26 @@
+{
+  "name": "site-assistant-server",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ws": "^8.17.0",
+    "site-assistant-shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.0"
+  }
+}
