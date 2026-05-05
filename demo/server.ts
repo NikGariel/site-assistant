@@ -99,7 +99,6 @@ const httpServer = createServer(async (req, res) => {
       ]
 
       // Tool call loop (non-streaming — tools need full response)
-      let needsStreaming = true
       while (true) {
         const response = await openai.chat.completions.create({
           model: MODEL,
@@ -122,15 +121,14 @@ const httpServer = createServer(async (req, res) => {
               messages.push({ role: 'tool', tool_call_id: toolCall.id, content: JSON.stringify({ error: err.message }) })
             }
           }
-          // Continue loop for next LLM call
+          // Continue loop — LLM will either call more tools or respond with text
         } else {
-          // No tool calls — now stream the final text response
-          messages.push(msg)
+          // No tool calls — break, we'll stream below
           break
         }
       }
 
-      // Stream the final response
+      // Stream the final text response (messages already have the full tool history)
       const stream = await openai.chat.completions.create({
         model: MODEL,
         messages,
