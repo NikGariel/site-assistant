@@ -7,6 +7,7 @@ export default defineConfig([
     dts: true,
     sourcemap: true,
     clean: true,
+    noExternal: ['site-assistant-shared'],
   },
   {
     entry: ['src/index.ts'],
@@ -15,5 +16,6 @@ export default defineConfig([
     outExtension: () => ({ js: '.umd.js' }),
     sourcemap: true,
     minify: true,
+    noExternal: ['site-assistant-shared'],
   },
 ])

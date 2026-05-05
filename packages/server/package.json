@@ -1,6 +1,6 @@
 {
   "name": "site-assistant-server",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "WebSocket server for remote UI control — send commands to browser windows via AI tools or MCP",
   "license": "MIT",
   "keywords": ["websocket", "ai", "assistant", "ui-control", "mcp", "tools", "remote-control", "highlight", "automation"],
@@ -25,11 +25,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "site-assistant-shared": "workspace:*",
     "ws": "^8.17.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/ws": "^8.5.0"
+    "@types/ws": "^8.5.0",
+    "site-assistant-shared": "workspace:*"
   }
 }
