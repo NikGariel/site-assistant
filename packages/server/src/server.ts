@@ -15,6 +15,8 @@ export class SiteAssistantServer extends EventEmitter {
   private wss: WebSocketServer
   private connections: ConnectionManager
   private pendingSockets = new Map<WebSocket, NodeJS.Timeout>()
+  private aliveMap = new Map<WebSocket, boolean>()
+  private pingTimer: NodeJS.Timeout | null = null
 
   constructor(options: SiteAssistantServerOptions) {
     super()
@@ -26,14 +28,35 @@ export class SiteAssistantServer extends EventEmitter {
       this.wss = new WebSocketServer({ port: options.port ?? 3100 })
     }
 
+    this.pingTimer = setInterval(() => {
+      this.wss.clients.forEach((ws) => {
+        if (this.aliveMap.get(ws) === false) {
+          ws.terminate()
+          return
+        }
+        this.aliveMap.set(ws, false)
+        ws.ping()
+      })
+    }, 30000)
+
     this.wss.on('connection', (ws) => {
       // Wait for connect message
       const timeout = setTimeout(() => ws.close(), 5000)
       this.pendingSockets.set(ws, timeout)
 
+      this.aliveMap.set(ws, true)
+      ws.on('pong', () => {
+        this.aliveMap.set(ws, true)
+      })
+
       ws.on('message', (raw) => {
-        const data = JSON.parse(raw.toString()) as ClientMessage
-        this.handleMessage(ws, data)
+        try {
+          const data = JSON.parse(raw.toString())
+          if (!data || typeof data !== 'object' || !data.type) return
+          this.handleMessage(ws, data as ClientMessage)
+        } catch {
+          // Invalid JSON — ignore
+        }
       })
 
       ws.on('close', () => {
@@ -43,6 +66,7 @@ export class SiteAssistantServer extends EventEmitter {
           clearTimeout(t)
           this.pendingSockets.delete(ws)
         }
+        this.aliveMap.delete(ws)
         // Find and remove client
         const client = this.findClientByWs(ws)
         if (client) {
@@ -56,6 +80,7 @@ export class SiteAssistantServer extends EventEmitter {
   private handleMessage(ws: WebSocket, msg: ClientMessage): void {
     switch (msg.type) {
       case 'connect': {
+        if (typeof msg.clientId !== 'string' || !msg.meta || typeof msg.meta !== 'object') return
         const t = this.pendingSockets.get(ws)
         if (t) {
           clearTimeout(t)
@@ -66,6 +91,7 @@ export class SiteAssistantServer extends EventEmitter {
         break
       }
       case 'event': {
+        if (typeof msg.event !== 'string') return
         const client = this.findClientByWs(ws)
         if (client) {
           this.emit('event', { id: client.id, meta: client.meta }, msg.event, msg.payload)
@@ -73,6 +99,7 @@ export class SiteAssistantServer extends EventEmitter {
         break
       }
       case 'action_result': {
+        if (typeof msg.actionId !== 'string' || typeof msg.success !== 'boolean') return
         const client = this.findClientByWs(ws)
         if (client) {
           this.emit('action_result', { id: client.id, meta: client.meta }, msg.actionId, msg.success, msg.error)
@@ -128,6 +155,7 @@ export class SiteAssistantServer extends EventEmitter {
   }
 
   close(): void {
+    if (this.pingTimer) clearInterval(this.pingTimer)
     this.wss.close()
   }
 }

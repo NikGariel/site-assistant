@@ -76,6 +76,17 @@ export function getTheme(): Required<SiteAssistantTheme> {
   return currentTheme
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  // Handle both #fff and #ffffff, and rgb/rgba passthrough
+  if (hex.startsWith('rgb')) return hex
+  const h = hex.replace('#', '')
+  const fullHex = h.length === 3 ? h.split('').map(c => c + c).join('') : h
+  const r = parseInt(fullHex.slice(0, 2), 16)
+  const g = parseInt(fullHex.slice(2, 4), 16)
+  const b = parseInt(fullHex.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 function applyThemeVars(): void {
   const root = document.documentElement
   root.style.setProperty('--sa-primary', currentTheme.primaryColor)
@@ -83,6 +94,7 @@ function applyThemeVars(): void {
   root.style.setProperty('--sa-highlight-border-width', `${currentTheme.highlightBorderWidth}px`)
   root.style.setProperty('--sa-highlight-glow-spread', `${currentTheme.highlightGlowSpread}px`)
   root.style.setProperty('--sa-highlight-border-radius', `${currentTheme.highlightBorderRadius}px`)
+  root.style.setProperty('--sa-highlight-glow-color', hexToRgba(currentTheme.primaryColor, 0.5))
   root.style.setProperty('--sa-tooltip-bg', currentTheme.tooltipBackground)
   root.style.setProperty('--sa-tooltip-color', currentTheme.tooltipColor)
   root.style.setProperty('--sa-tooltip-font-size', currentTheme.tooltipFontSize)
@@ -120,7 +132,7 @@ export function injectThemedStyles(): void {
   position: relative;
   z-index: calc(var(--sa-z-base) + 1);
   box-shadow: 0 0 0 var(--sa-highlight-border-width) var(--sa-primary),
-              0 0 var(--sa-highlight-glow-spread) color-mix(in srgb, var(--sa-primary) 50%, transparent);
+              0 0 var(--sa-highlight-glow-spread) var(--sa-highlight-glow-color);
   border-radius: var(--sa-highlight-border-radius);
   transition: box-shadow 0.3s;
 }
