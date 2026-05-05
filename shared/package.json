@@ -1,6 +1,8 @@
 {
   "name": "site-assistant-shared",
   "version": "0.1.0",
+  "description": "Shared types and schemas for site-assistant packages",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
